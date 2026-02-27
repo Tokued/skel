@@ -1,47 +1,25 @@
 const mongoose = require("mongoose");
 
-const watchlistSchema = new mongoose.Schema(
-  {
-    user: {
-      type: String,
-      required: [true, "User is required"],
-      trim: true,
-      minlength: 1,
-      maxlength: 120
+const watchlistSchema = new mongoose.Schema({
+    userId: {
+        type: String,
+        required: true
     },
     movieId: {
-      type: String,
-      required: [true, "Movie ID is required"],
-      trim: true,
-      minlength: 1,
-      maxlength: 80
+        type: String,
+        required: true
     },
-    movieTitle: {
-      type: String,
-      required: [true, "Movie title is required"],
-      trim: true,
-      minlength: 1,
-      maxlength: 200
-    },
-    notes: {
-      type: String,
-      trim: true,
-      maxlength: 500,
-      default: ""
+    title: {
+        type: String,
+        required: true
     },
     addedAt: {
-      type: Date,
-      default: Date.now
+        type: Date,
+        default: Date.now
     }
-  },
-  {
-    timestamps: true
-  }
-);
+});
 
-// Prevent duplicate watchlist entries for the same user + movie
-watchlistSchema.index({ user: 1, movieId: 1 }, { unique: true });
+// prevents duplicate movies per user
+watchlistSchema.index({ userId: 1, movieId: 1 }, { unique: true });
 
-const Watchlist = mongoose.model("Watchlist", watchlistSchema);
-
-module.exports = Watchlist;
+module.exports = mongoose.model("Watchlist", watchlistSchema);

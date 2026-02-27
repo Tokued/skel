@@ -2,17 +2,22 @@ const express = require("express");
 const router = express.Router();
 const Watchlist = require("../models/watchlistModel");
 
-// GET /watchlist/getAll
-router.get("/getAll", async (req, res) => {
-  try {
-    const items = await Watchlist.find();
-    return res.json(items);
-  } catch (err) {
-    return res.status(500).json({
-      error: "Failed to fetch watchlist items",
-      details: err.message,
-    });
-  }
+router.get("/watchlist/:userId", async (req, res) => {
+    try {
+
+        const { userId } = req.params;
+
+        const watchlist = await Watchlist.find({ userId })
+                                         .sort({ addedAt: -1 });
+
+        res.json(watchlist);
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Server Error",
+            error: error.message
+        });
+    }
 });
 
 module.exports = router;
