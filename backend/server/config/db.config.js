@@ -1,13 +1,19 @@
+// config/db.config.js
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-dotenv.config();
 
-module.exports = async () => {
-  try {
-    await mongoose.connect(process.env.DB_URL);
-    console.log("The backend has connected to the MongoDB database.");
-  } catch (error) {
-    console.log(`${error} could not connect`);
-    throw error; // Important for tests
+const dbConnection = () => {
+  const uri = process.env.MONGO_URI;
+  if (!uri) {
+    console.error("MongoDB connection string (MONGO_URI) is not set!");
+    process.exit(1);
   }
+
+  mongoose.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+    .then(() => console.log("Connected to MongoDB successfully"))
+    .catch((err) => console.error("Could not connect to MongoDB", err));
 };
+
+module.exports = dbConnection;
