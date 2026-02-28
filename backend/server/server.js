@@ -13,6 +13,8 @@ const registerRoute = require('./routes/userSignUp');
 const getUserByIdRoute = require('./routes/userGetUserById');
 const editUser = require('./routes/userEditUser');
 const deleteUser = require('./routes/userDeleteAll');
+const searchAddRoute = require("./routes/searchAdd");
+const searchGetAllRoute = require("./routes/searchGetAll");
 
 const SERVER_PORT = process.env.SERVER_PORT || 8081;
 
@@ -30,6 +32,10 @@ app.use('/user', getAllUsersRoute);
 app.use('/user', getUserByIdRoute);
 app.use('/user', editUser);
 app.use('/user', deleteUser);
+
+// ---------------- SEARCH ROUTES ----------------
+app.use("/search", searchAddRoute);
+app.use("/search", searchGetAllRoute);
 
 // ---------------- WATCHLIST SETUP ----------------
 

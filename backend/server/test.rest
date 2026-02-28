@@ -50,3 +50,16 @@ Content-Type: application/json
 
 ###
 POST  http://localhost:8081/user/deleteAll
+
+### Add search record
+POST http://localhost:8081/search/add
+Content-Type: application/json
+
+{
+  "username": "antikvng",
+  "query": "batman",
+  "category": "movies"
+}
+
+### Get all search records
+GET http://localhost:8081/search/getAll
