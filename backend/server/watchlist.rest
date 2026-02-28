@@ -1,0 +1,56 @@
+### Add a movie to the watchlist
+POST http://localhost:8081/watchlist/add
+Content-Type: application/json
+
+{
+  "userId": "U123",
+  "movieId": "M002",
+  "title": "Inception"
+}
+
+###
+
+### Add another movie to the watchlist
+POST http://localhost:8081/watchlist/add
+Content-Type: application/json
+
+{
+  "userId": "U123",
+  "movieId": "M001",
+  "title": "Interstellar"
+}
+
+###
+
+### Get all movies for a user
+GET http://localhost:8081/watchlist/U123
+Accept: application/json
+
+###
+
+### Add a movie with missing field (should fail)
+POST http://localhost:8081/watchlist/add
+Content-Type: application/json
+
+{
+  "userId": "U123",
+  "movieId": "M003"
+}
+
+###
+
+### Add a duplicate movie (should fail)
+POST http://localhost:8081/watchlist/add
+Content-Type: application/json
+
+{
+  "userId": "U123",
+  "movieId": "M001",
+  "title": "Inception"
+}
+
+###
+
+### Get movies for a user with no movies (should return empty array)
+GET http://localhost:8081/watchlist/U999
+Accept: application/json
