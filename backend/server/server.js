@@ -33,9 +33,14 @@ app.use('/user', getUserByIdRoute);
 app.use('/user', editUser);
 app.use('/user', deleteUser);
 
+
 // ---------------- SEARCH ROUTES ----------------
 app.use("/search", searchAddRoute);
 app.use("/search", searchGetAllRoute);
+
+// ---------------- USER-MOVIE ROUTES ----------------
+app.use("/user-movie", require("./routes/userMovieAdd.js"));
+app.use("/user-movie", require("./routes/userMovieGetAll.js"));
 
 // ---------------- WATCHLIST SETUP ----------------
 
