@@ -16,9 +16,7 @@ const deleteUser = require('./routes/userDeleteAll');
 const searchAddRoute = require("./routes/searchAdd");
 const searchGetAllRoute = require("./routes/searchGetAll");
 
-const reviewRoute = require("./routes/review.routes");
-app.use(express.json());
-app.use("/review", reviewRoute);
+
 
 const SERVER_PORT = process.env.SERVER_PORT || 8081;
 
