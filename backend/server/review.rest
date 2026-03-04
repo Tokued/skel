@@ -1,0 +1,30 @@
+@baseUrl = http://localhost:8081
+
+### =========================
+### REVIEWS
+### =========================
+
+### Add Review
+POST {{baseUrl}}/review/add
+Content-Type: application/json
+
+{
+  "movieId": "65f3c2a4b91a2f0012345678",
+  "userId": "635ab8dfc407faf9f73deaf2",
+  "rating": 5,
+  "reviewText": "Amazing movie!"
+}
+
+###
+
+### Get All Reviews
+GET {{baseUrl}}/review/all
+Content-Type: application/json
+
+###
+
+### Get Reviews By User
+GET {{baseUrl}}/review/user/635ab8dfc407faf9f73deaf2
+Content-Type: application/json
+
+###
