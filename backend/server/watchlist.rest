@@ -52,5 +52,10 @@ Content-Type: application/json
 ###
 
 ### Get movies for a user with no movies (should return empty array)
-GET http://localhost:8081/watchlist/U999
+GET http://localhost:8081/watchlist/U123
 Accept: application/json
+
+### Delete a movie from the watchlist
+DELETE http://localhost:8081/watchlist/U123/M002
+Content-Type: application/json
+###

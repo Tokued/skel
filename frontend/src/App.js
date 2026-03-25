@@ -12,7 +12,7 @@ import Signup from "./components/pages/registerPage";
 import PrivateUserProfile from "./components/pages/privateUserProfilePage";
 import MbtaAlertsPage from "./components/pages/mbtaAlerts";
 import MbtaLinesPage from "./components/pages/mbtaLines";
-import Reviews from "./components/pages/Reviews"; // <-- fixed import path
+import WatchlistPage from "./components/pages/watchlistPage";
 
 import getUserInfo from "./utilities/decodeJwt";
 
@@ -37,6 +37,7 @@ const App = () => {
           <Route path="/privateUserProfile" element={<PrivateUserProfile />} />
           <Route exact path="/mbtaAlerts" element={<MbtaAlertsPage />} />
           <Route exact path="/mbtaLines" element={<MbtaLinesPage />} />
+          <Route exact path="/watchlist" element={<WatchlistPage />} />
 
           {/* Reviews page route */}
           <Route exact path="/reviews" element={<Reviews />} />
