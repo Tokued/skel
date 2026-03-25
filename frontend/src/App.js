@@ -13,7 +13,7 @@ import PrivateUserProfile from "./components/pages/privateUserProfilePage";
 import MbtaAlertsPage from "./components/pages/mbtaAlerts";
 import MbtaLinesPage from "./components/pages/mbtaLines";
 import WatchlistPage from "./components/pages/watchlistPage";
-
+import Reviews from "./components/pages/Reviews"; // <-- Add this
 import getUserInfo from "./utilities/decodeJwt";
 
 export const UserContext = createContext();
