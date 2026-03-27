@@ -5,27 +5,20 @@ import getUserInfo from "../../utilities/decodeJwt";
 
 const WatchlistPage = () => {
   const [watchlist, setWatchlist] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+
+  const userId = user?.id;
 
   // Get user info
   useEffect(() => {
     setUser(getUserInfo());
   }, []);
 
-  const handleLogout = (e) => {
-    e.preventDefault();
-    localStorage.removeItem("accessToken");
-    navigate("/");
-  };
-
-  const userId = user?.id;
-
   // Fetch watchlist
   useEffect(() => {
     const fetchWatchlist = async () => {
+      if (!userId) return;
       try {
         const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
         setWatchlist(res.data);
@@ -34,42 +27,18 @@ const WatchlistPage = () => {
       }
     };
 
-    if (userId) fetchWatchlist();
+    fetchWatchlist();
   }, [userId]);
-
-  // Search movies
-  const searchMovies = async () => {
-    if (!searchQuery) return;
-
-    try {
-      const res = await axios.get(
-        `http://localhost:8081/movies/search?query=${searchQuery}`
-      );
-      setSearchResults(res.data);
-    } catch (err) {
-      console.error("Search error:", err);
-    }
-  };
 
   // Remove movie
   const removeMovie = async (id) => {
     try {
       await axios.delete(`http://localhost:8081/watchlist/${userId}/${id}`);
-      const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
-      setWatchlist(res.data);
+      setWatchlist((prev) => prev.filter((m) => m.movieId !== id));
     } catch (err) {
       alert("Error removing movie");
     }
   };
-
-  // Auto search while typing
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      if (searchQuery) searchMovies();
-    }, 400);
-
-    return () => clearTimeout(delay);
-  }, [searchQuery]);
 
   if (!userId) {
     return (
@@ -82,56 +51,6 @@ const WatchlistPage = () => {
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>My Watchlist</h1>
-
-      {/* SEARCH BAR */}
-      <div style={styles.searchBar}>
-        <button onClick={searchMovies} style={styles.searchButton}>
-          Search
-        </button>
-        <input
-          type="text"
-          placeholder="Search movies..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={styles.input}
-        />
-      </div>
-
-      {/* SEARCH RESULTS */}
-      {searchResults.length > 0 && (
-        <div>
-          <h3 style={styles.sectionTitle}>Results</h3>
-          <div style={styles.grid}>
-            {searchResults.map((movie) => (
-              <div
-                key={movie.id}
-                style={styles.card}
-                onClick={() => navigate(`/movies/${movie.id}`)} // ✅ go to movie page
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.transform = "scale(1.05)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.transform = "scale(1)")
-                }
-              >
-                {movie.poster !== "N/A" ? (
-                  <img src={movie.poster} alt="" style={styles.poster} />
-                ) : (
-                  <div style={styles.noPoster}>No Image</div>
-                )}
-
-                <div style={styles.cardContent}>
-                  <h4 style={styles.movieTitle}>{movie.title}</h4>
-                  <p style={styles.year}>{movie.year}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* WATCHLIST */}
-      <h3 style={styles.sectionTitle}>Your Watchlist</h3>
 
       {watchlist.length === 0 ? (
         <p style={{ color: "#aaa" }}>No movies added yet.</p>
@@ -157,7 +76,7 @@ const WatchlistPage = () => {
 
                 <button
                   onClick={(e) => {
-                    e.stopPropagation(); // prevent navigation
+                    e.stopPropagation();
                     removeMovie(movie.movieId);
                   }}
                   style={styles.removeButton}
@@ -183,49 +102,15 @@ const styles = {
     color: "white",
     fontFamily: "Arial, sans-serif",
   },
-
   title: {
     fontSize: "32px",
     marginBottom: "20px",
   },
-
-  sectionTitle: {
-    marginTop: "30px",
-    marginBottom: "10px",
-    color: "#ccc",
-  },
-
-  searchBar: {
-    display: "flex",
-    gap: "10px",
-    marginBottom: "20px",
-  },
-
-  input: {
-    flex: 1,
-    padding: "10px",
-    borderRadius: "5px",
-    border: "none",
-    outline: "none",
-    color: "black",
-    backgroundColor: "#fff",
-  },
-
-  searchButton: {
-    padding: "10px 15px",
-    backgroundColor: "#444",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
     gap: "15px",
   },
-
   card: {
     backgroundColor: "#1e1e1e",
     borderRadius: "10px",
@@ -233,42 +118,19 @@ const styles = {
     transition: "transform 0.2s",
     cursor: "pointer",
   },
-
-  poster: {
-    width: "100%",
-    height: "220px",
-    objectFit: "cover",
-  },
-
-  noPoster: {
-    height: "220px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#333",
-  },
-
   cardContent: {
     padding: "10px",
     textAlign: "center",
   },
-
   movieTitle: {
     fontSize: "14px",
     marginBottom: "5px",
   },
-
-  year: {
-    fontSize: "12px",
-    color: "#aaa",
-  },
-
   meta: {
     fontSize: "12px",
     color: "#aaa",
     marginBottom: "10px",
   },
-
   removeButton: {
     marginTop: "10px",
     padding: "5px 10px",
