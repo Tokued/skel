@@ -5,6 +5,8 @@ import getUserInfo from "../../utilities/decodeJwt";
 
 const WatchlistPage = () => {
   const [watchlist, setWatchlist] = useState([]);
+  const [movies, setMovies] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
@@ -22,6 +24,13 @@ const WatchlistPage = () => {
       try {
         const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
         setWatchlist(res.data);
+
+        // Fetch full movie details for posters
+        const movieDetailsPromises = res.data.map((movie) =>
+          axios.get(`http://localhost:8081/movies/${movie.movieId}`)
+        );
+        const moviesRes = await Promise.all(movieDetailsPromises);
+        setMovies(moviesRes.map((r) => r.data));
       } catch (err) {
         console.error("Error fetching watchlist:", err);
       }
@@ -34,11 +43,17 @@ const WatchlistPage = () => {
   const removeMovie = async (id) => {
     try {
       await axios.delete(`http://localhost:8081/watchlist/${userId}/${id}`);
+      setMovies((prev) => prev.filter((m) => m.id !== id));
       setWatchlist((prev) => prev.filter((m) => m.movieId !== id));
     } catch (err) {
       alert("Error removing movie");
     }
   };
+
+  // Filter movies based on search query
+  const filteredMovies = movies.filter((movie) =>
+    movie.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (!userId) {
     return (
@@ -52,32 +67,47 @@ const WatchlistPage = () => {
     <div style={styles.container}>
       <h1 style={styles.title}>My Watchlist</h1>
 
-      {watchlist.length === 0 ? (
-        <p style={{ color: "#aaa" }}>No movies added yet.</p>
+      {/* SEARCH BAR */}
+      <div style={styles.searchBar}>
+        <input
+          type="text"
+          placeholder="Search your watchlist..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={styles.input}
+        />
+      </div>
+
+      {filteredMovies.length === 0 ? (
+        <p style={{ color: "#aaa", textAlign: "center", marginTop: "50px" }}>
+          {searchQuery ? "No results found." : "Your watchlist is empty."}
+        </p>
       ) : (
         <div style={styles.grid}>
-          {watchlist.map((movie) => (
+          {filteredMovies.map((movie) => (
             <div
-              key={movie.movieId}
+              key={movie.id}
               style={styles.card}
-              onClick={() => navigate(`/movies/${movie.movieId}`)}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.transform = "scale(1.05)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.transform = "scale(1)")
-              }
+              onClick={() => navigate(`/movies/${movie.id}`)}
             >
-              <div style={styles.cardContent}>
+              {movie.poster && movie.poster !== "N/A" ? (
+                <img src={movie.poster} alt={movie.title} style={styles.poster} />
+              ) : (
+                <div style={styles.noPoster}>No Image</div>
+              )}
+
+              <div className="overlay" style={styles.overlay}>
                 <h4 style={styles.movieTitle}>{movie.title}</h4>
                 <p style={styles.meta}>
-                  Added: {new Date(movie.addedAt).toLocaleDateString()}
+                  Added:{" "}
+                  {new Date(
+                    watchlist.find((m) => m.movieId === movie.id)?.addedAt
+                  ).toLocaleDateString()}
                 </p>
-
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    removeMovie(movie.movieId);
+                    removeMovie(movie.id);
                   }}
                   style={styles.removeButton}
                 >
@@ -94,52 +124,101 @@ const WatchlistPage = () => {
 
 const styles = {
   container: {
-    padding: "30px",
-    maxWidth: "1000px",
-    margin: "auto",
+    padding: "40px",
     backgroundColor: "#121212",
     minHeight: "100vh",
     color: "white",
     fontFamily: "Arial, sans-serif",
   },
   title: {
-    fontSize: "32px",
+    fontSize: "36px",
+    marginBottom: "30px",
+    textAlign: "center",
+  },
+  searchBar: {
+    display: "flex",
+    justifyContent: "center",
     marginBottom: "20px",
+  },
+  input: {
+    width: "50%",
+    padding: "10px 15px",
+    borderRadius: "5px",
+    border: "none",
+    outline: "none",
+    fontSize: "16px",
+    color: "#333",
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-    gap: "15px",
+    gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+    gap: "20px",
   },
   card: {
-    backgroundColor: "#1e1e1e",
+    position: "relative",
     borderRadius: "10px",
     overflow: "hidden",
-    transition: "transform 0.2s",
     cursor: "pointer",
+    transition: "transform 0.3s, box-shadow 0.3s",
   },
-  cardContent: {
+  poster: {
+    width: "100%",
+    height: "270px",
+    objectFit: "cover",
+    display: "block",
+  },
+  noPoster: {
+    width: "100%",
+    height: "270px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#333",
+    color: "#aaa",
+    fontSize: "14px",
+  },
+  overlay: {
+    position: "absolute",
+    bottom: "0",
+    width: "100%",
+    background: "rgba(0,0,0,0.7)",
+    color: "#fff",
     padding: "10px",
     textAlign: "center",
+    opacity: "0",
+    transition: "opacity 0.3s",
   },
   movieTitle: {
     fontSize: "14px",
-    marginBottom: "5px",
+    fontWeight: "bold",
+    margin: "5px 0",
   },
   meta: {
     fontSize: "12px",
-    color: "#aaa",
-    marginBottom: "10px",
+    color: "#ccc",
+    marginBottom: "8px",
   },
   removeButton: {
-    marginTop: "10px",
     padding: "5px 10px",
-    backgroundColor: "red",
+    backgroundColor: "#e50914",
     border: "none",
     color: "white",
     borderRadius: "5px",
     cursor: "pointer",
+    fontSize: "12px",
   },
 };
+
+// Inject hover CSS
+const styleSheet = `
+  .overlay:hover {
+    opacity: 1 !important;
+  }
+  div[style*='position: relative']:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.7) !important;
+  }
+`;
+document.head.appendChild(Object.assign(document.createElement("style"), { textContent: styleSheet }));
 
 export default WatchlistPage;
