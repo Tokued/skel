@@ -10,8 +10,6 @@ import HomePage from "./components/pages/homePage";
 import Login from "./components/pages/loginPage";
 import Signup from "./components/pages/registerPage";
 import PrivateUserProfile from "./components/pages/privateUserProfilePage";
-import MbtaAlertsPage from "./components/pages/mbtaAlerts";
-import MbtaLinesPage from "./components/pages/mbtaLines";
 import WatchlistPage from "./components/pages/watchlistPage";
 import Reviews from "./components/pages/Reviews"; // <-- Add this
 import getUserInfo from "./utilities/decodeJwt";
@@ -35,8 +33,6 @@ const App = () => {
           <Route exact path="/login" element={<Login />} />
           <Route exact path="/signup" element={<Signup />} />
           <Route path="/privateUserProfile" element={<PrivateUserProfile />} />
-          <Route exact path="/mbtaAlerts" element={<MbtaAlertsPage />} />
-          <Route exact path="/mbtaLines" element={<MbtaLinesPage />} />
           <Route exact path="/watchlist" element={<WatchlistPage />} />
 
           {/* Reviews page route */}
