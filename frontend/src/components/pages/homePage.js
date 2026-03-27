@@ -37,31 +37,35 @@ const HomePage = () => {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.title}>Movie Search</h1>
+      <div style={styles.hero}>
+        <h1 style={styles.title}>VMDB</h1>
+        <p style={styles.subtitle}>
+          Search movies, explore titles, and manage your watchlist all in one place.
+        </p>
+      </div>
 
       <div style={styles.searchBar}>
-        <button onClick={searchMovies} style={styles.searchButton}>
-          Search
-        </button>
-
         <input
           type="text"
-          placeholder="Search movies..."
+          placeholder="Search for a movie..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           style={styles.input}
         />
+        <button onClick={searchMovies} style={styles.searchButton}>
+          Search
+        </button>
       </div>
 
       {searchResults.length > 0 ? (
         <div>
-          <h3 style={styles.sectionTitle}>Results</h3>
+          <h3 style={styles.sectionTitle}>Search Results</h3>
           <div style={styles.grid}>
             {searchResults.map((movie) => (
               <div
                 key={movie.id}
                 style={styles.card}
-                onClick={() => navigate(`/movies/${movie.id}`)} // ✅ go to movie page
+                onClick={() => navigate(`/movies/${movie.id}`)}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.transform = "scale(1.05)")
                 }
@@ -78,13 +82,17 @@ const HomePage = () => {
                 <div style={styles.cardContent}>
                   <h4 style={styles.movieTitle}>{movie.title}</h4>
                   <p style={styles.year}>{movie.year}</p>
+                  <p style={styles.viewText}>Click to view details</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <p style={styles.emptyText}>Search for a movie to see results.</p>
+        <div style={styles.emptyState}>
+          <h3>Find your next movie</h3>
+          <p>Search for a title like Batman, Interstellar, or Spider-Man.</p>
+        </div>
       )}
     </div>
   );
@@ -93,95 +101,126 @@ const HomePage = () => {
 const styles = {
   container: {
     padding: "30px",
-    maxWidth: "1000px",
-    margin: "auto",
-    backgroundColor: "#121212",
+    maxWidth: "1100px",
+    margin: "0 auto",
     minHeight: "100vh",
     color: "white",
     fontFamily: "Arial, sans-serif",
+    backgroundColor: "#0f0f0f",
+  },
+
+  hero: {
+    marginBottom: "30px",
+    textAlign: "center",
+    padding: "30px 20px",
+    backgroundColor: "#1a1a1a",
+    borderRadius: "16px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.35)",
   },
 
   title: {
-    fontSize: "32px",
-    marginBottom: "20px",
+    fontSize: "48px",
+    marginBottom: "10px",
+    color: "#ffffff",
   },
 
-  sectionTitle: {
-    marginTop: "30px",
-    marginBottom: "10px",
-    color: "#ccc",
+  subtitle: {
+    fontSize: "18px",
+    color: "#cfcfcf",
+    maxWidth: "700px",
+    margin: "0 auto",
   },
 
   searchBar: {
     display: "flex",
     gap: "10px",
-    marginBottom: "20px",
+    marginBottom: "30px",
   },
 
   input: {
     flex: 1,
-    padding: "10px",
-    borderRadius: "5px",
-    border: "none",
+    padding: "12px",
+    borderRadius: "8px",
+    border: "1px solid #333",
     outline: "none",
-    color: "black",
-    backgroundColor: "#fff",
+    fontSize: "16px",
+    backgroundColor: "#1f1f1f",
+    color: "white",
   },
 
   searchButton: {
-    padding: "10px 15px",
-    backgroundColor: "#444",
+    padding: "12px 18px",
+    backgroundColor: "#2f2f2f",
     color: "white",
     border: "none",
-    borderRadius: "5px",
+    borderRadius: "8px",
     cursor: "pointer",
+  },
+
+  sectionTitle: {
+    marginBottom: "15px",
+    color: "#e0e0e0",
   },
 
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
-    gap: "15px",
+    gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+    gap: "20px",
   },
 
   card: {
     backgroundColor: "#1e1e1e",
-    borderRadius: "10px",
+    borderRadius: "12px",
     overflow: "hidden",
     transition: "transform 0.2s",
+    cursor: "pointer",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.25)",
   },
 
   poster: {
     width: "100%",
-    height: "220px",
+    height: "260px",
     objectFit: "cover",
   },
 
   noPoster: {
-    height: "220px",
+    height: "260px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#333",
+    color: "#ccc",
   },
 
   cardContent: {
-    padding: "10px",
+    padding: "12px",
     textAlign: "center",
   },
 
   movieTitle: {
-    fontSize: "14px",
-    marginBottom: "5px",
+    fontSize: "16px",
+    marginBottom: "6px",
+    color: "#fff",
   },
 
   year: {
-    fontSize: "12px",
+    fontSize: "13px",
     color: "#aaa",
+    marginBottom: "8px",
   },
 
-  emptyText: {
-    color: "#aaa",
-    marginTop: "20px",
+  viewText: {
+    fontSize: "12px",
+    color: "#888",
+  },
+
+  emptyState: {
+    textAlign: "center",
+    marginTop: "50px",
+    color: "#bbb",
+    backgroundColor: "#1a1a1a",
+    padding: "30px",
+    borderRadius: "16px",
   },
 };
 
