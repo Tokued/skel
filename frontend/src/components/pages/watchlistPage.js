@@ -37,7 +37,7 @@ const WatchlistPage = () => {
     if (userId) fetchWatchlist();
   }, [userId]);
 
-  // Search movies (OMDb via backend)
+  // Search movies
   const searchMovies = async () => {
     if (!searchQuery) return;
 
@@ -48,25 +48,6 @@ const WatchlistPage = () => {
       setSearchResults(res.data);
     } catch (err) {
       console.error("Search error:", err);
-    }
-  };
-
-  // Add movie directly
-  const addMovie = async (movie) => {
-    if (!movie) return;
-
-    try {
-      await axios.post(`http://localhost:8081/watchlist/add`, {
-        userId,
-        movieId: movie.id,
-        title: movie.title,
-      });
-
-      setSearchResults([]); // clear search results
-      const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
-      setWatchlist(res.data);
-    } catch (err) {
-      alert(err.response?.data?.message || "Error adding movie");
     }
   };
 
@@ -125,8 +106,13 @@ const WatchlistPage = () => {
               <div
                 key={movie.id}
                 style={styles.card}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                onClick={() => navigate(`/movies/${movie.id}`)} // ✅ go to movie page
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.05)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1)")
+                }
               >
                 {movie.poster !== "N/A" ? (
                   <img src={movie.poster} alt="" style={styles.poster} />
@@ -137,14 +123,6 @@ const WatchlistPage = () => {
                 <div style={styles.cardContent}>
                   <h4 style={styles.movieTitle}>{movie.title}</h4>
                   <p style={styles.year}>{movie.year}</p>
-
-                  {/* Single button: Add movie */}
-                  <button
-                    onClick={() => addMovie(movie)}
-                    style={styles.addButton}
-                  >
-                    + Add
-                  </button>
                 </div>
               </div>
             ))}
@@ -163,16 +141,25 @@ const WatchlistPage = () => {
             <div
               key={movie.movieId}
               style={styles.card}
-              onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
-              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              onClick={() => navigate(`/movies/${movie.movieId}`)}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "scale(1.05)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "scale(1)")
+              }
             >
               <div style={styles.cardContent}>
                 <h4 style={styles.movieTitle}>{movie.title}</h4>
                 <p style={styles.meta}>
                   Added: {new Date(movie.addedAt).toLocaleDateString()}
                 </p>
+
                 <button
-                  onClick={() => removeMovie(movie.movieId)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevent navigation
+                    removeMovie(movie.movieId);
+                  }}
                   style={styles.removeButton}
                 >
                   Remove
@@ -220,23 +207,13 @@ const styles = {
     borderRadius: "5px",
     border: "none",
     outline: "none",
-    color: "black",            // <-- text color
-    backgroundColor: "#fff",   // <-- white background for contrast
+    color: "black",
+    backgroundColor: "#fff",
   },
 
   searchButton: {
     padding: "10px 15px",
     backgroundColor: "#444",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  },
-
-  addButton: {
-    marginTop: "10px",
-    padding: "5px 10px",
-    backgroundColor: "#e50914",
     color: "white",
     border: "none",
     borderRadius: "5px",
@@ -254,6 +231,7 @@ const styles = {
     borderRadius: "10px",
     overflow: "hidden",
     transition: "transform 0.2s",
+    cursor: "pointer",
   },
 
   poster: {

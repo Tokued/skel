@@ -13,6 +13,7 @@ import PrivateUserProfile from "./components/pages/privateUserProfilePage";
 import WatchlistPage from "./components/pages/watchlistPage";
 import Reviews from "./components/pages/Reviews"; // <-- Add this
 import getUserInfo from "./utilities/decodeJwt";
+import MoviePage from "./components/pages/moviePage";
 
 export const UserContext = createContext();
 
@@ -34,6 +35,7 @@ const App = () => {
           <Route exact path="/signup" element={<Signup />} />
           <Route path="/privateUserProfile" element={<PrivateUserProfile />} />
           <Route exact path="/watchlist" element={<WatchlistPage />} />
+          <Route path="/movies/:id" element={<MoviePage />} />
 
           {/* Reviews page route */}
           <Route exact path="/reviews" element={<Reviews />} />
