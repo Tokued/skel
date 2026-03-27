@@ -15,6 +15,7 @@ const editUser = require('./routes/userEditUser');
 const deleteUser = require('./routes/userDeleteAll');
 const searchAddRoute = require("./routes/searchAdd");
 const searchGetAllRoute = require("./routes/searchGetAll");
+const movieRoutes = require("./routes/movies");
 
 const reviewRoute = require("./routes/review.routes");
 app.use(express.json());
@@ -50,6 +51,9 @@ app.use("/user-movie", require("./routes/userMovieGetAll.js"));
 app.use("/watchlist", require("./routes/watchlistAdd.js"));
 app.use("/watchlist", require("./routes/watchlistDelete.js"));
 app.use("/watchlist", require("./routes/watchlistGetAll.js"));
+
+// -----------------MOVIE ROUTES -------------------
+app.use("/movies", movieRoutes);
 
 // ---------------- HEALTH CHECK ----------------
 app.get("/", (req, res) => {
