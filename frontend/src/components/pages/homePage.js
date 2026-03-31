@@ -121,7 +121,7 @@ const styles = {
   title: {
     fontSize: "48px",
     marginBottom: "10px",
-    color: "#ffffff",
+    color: "#FFA500",
   },
 
   subtitle: {
