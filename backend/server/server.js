@@ -27,7 +27,14 @@ const SERVER_PORT = process.env.SERVER_PORT || 8081;
 dbConnection();
 
 // Middleware
-app.use(cors({ origin: '*' }));
+app.use(cors({
+  origin: "http://localhost:8096",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
+app.options("*", cors());
 app.use(express.json());
 
 // ---------------- USER ROUTES ----------------
