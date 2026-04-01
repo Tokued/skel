@@ -1,16 +1,28 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Container, Card, Form, Button, Row, Col, Badge } from "react-bootstrap";
+import { Container, Card, Form, Button, Row, Col, Badge, Alert } from "react-bootstrap";
+import { useParams } from "react-router-dom";
+import getUserInfo from "../../utilities/decodeJwt";
 
-const API = "http://localhost:8081/reviews";
-
+// ✅ FIXED HERE
+const BACKEND_URI = process.env.REACT_APP_BACKEND_SERVER_URI || "http://localhost:8081";
+const API = `${BACKEND_URI}/reviews`;
 export default function Reviews() {
-  const [movieId, setMovieId] = useState("");
+  const { id } = useParams(); // Movie ID from route
+  const [movieId, setMovieId] = useState(id || "");
   const [userId, setUserId] = useState("");
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [reviews, setReviews] = useState([]);
   const [searchUser, setSearchUser] = useState("");
+  const [errorMessage, setErrorMessage] = useState(""); // <-- for error feedback
+  const [successMessage, setSuccessMessage] = useState(""); // <-- for success feedback
+
+  // Fetch logged-in user info
+  useEffect(() => {
+    const user = getUserInfo();
+    if (user?.id) setUserId(user.id);
+  }, []);
 
   // Fetch all reviews
   const fetchReviews = async () => {
@@ -22,31 +34,36 @@ export default function Reviews() {
     }
   };
 
-  // Fetch reviews by user
-  const fetchByUser = async () => {
-    if (!searchUser) return fetchReviews();
-    try {
-      const res = await axios.get(`${API}/user/${searchUser}`);
-      setReviews(res.data.reviews);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Submit new review
+  // Submit new review with feedback
   const submitReview = async (e) => {
     e.preventDefault();
-    if (!movieId || !userId || !rating || !reviewText) return;
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (!movieId || !userId || !rating || !reviewText) {
+      setErrorMessage("All fields are required!");
+      return;
+    }
 
     try {
-      await axios.post(`${API}/add`, { movieId, userId, rating, reviewText });
-      setMovieId("");
-      setUserId("");
-      setRating(0);
+      const res = await axios.post(`${API}/add`, {
+        movieId,
+        userId,
+        rating: Number(rating), // <-- ensure number
+        reviewText,
+      });
+
+      setSuccessMessage("Review submitted successfully!");
       setReviewText("");
+      setRating(0);
       fetchReviews();
     } catch (err) {
       console.error(err);
+      if (err.response?.data?.message) {
+        setErrorMessage(err.response.data.message);
+      } else {
+        setErrorMessage("Failed to submit review. Please try again.");
+      }
     }
   };
 
@@ -61,6 +78,10 @@ export default function Reviews() {
       {/* Add Review Form */}
       <Card className="p-4 mb-4 shadow-sm">
         <h4 className="mb-3">Add a Review</h4>
+
+        {errorMessage && <Alert variant="danger">{errorMessage}</Alert>}
+        {successMessage && <Alert variant="success">{successMessage}</Alert>}
+
         <Form onSubmit={submitReview}>
           <Row>
             <Col md={6} className="mb-2">
@@ -69,6 +90,7 @@ export default function Reviews() {
                 value={movieId}
                 onChange={(e) => setMovieId(e.target.value)}
                 required
+                readOnly={!!id}
               />
             </Col>
             <Col md={6} className="mb-2">
@@ -77,6 +99,7 @@ export default function Reviews() {
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 required
+                readOnly={!!userId}
               />
             </Col>
           </Row>
@@ -85,7 +108,7 @@ export default function Reviews() {
             <Col md={6} className="mb-2">
               <Form.Select
                 value={rating}
-                onChange={(e) => setRating(e.target.value)}
+                onChange={(e) => setRating(Number(e.target.value))}
                 required
               >
                 <option value={0}>Select Rating</option>
@@ -124,7 +147,7 @@ export default function Reviews() {
             />
           </Col>
           <Col md={6}>
-            <Button onClick={fetchByUser} className="me-2">
+            <Button onClick={() => searchUser ? axios.get(`${API}/user/${searchUser}`).then(res => setReviews(res.data.reviews)) : fetchReviews()} className="me-2">
               Search
             </Button>
             <Button variant="secondary" onClick={fetchReviews}>

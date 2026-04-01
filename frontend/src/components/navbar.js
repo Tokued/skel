@@ -29,7 +29,6 @@ export default function Navbar() {
           <Nav.Link href="/watchlist"> Watchlist</Nav.Link>
 
         
-          <Nav.Link href="/reviews">Reviews</Nav.Link>
         </Nav>
       </Container>
     </ReactNavbar>
