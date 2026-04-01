@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import getUserInfo from "../../utilities/decodeJwt";
+import logo from "../../assets/vmdb-logo.png";
 
 const topMoviesSeed = [
   { id: "tt15398776", title: "Oppenheimer", year: "2023" },
@@ -60,42 +61,42 @@ const HomePage = () => {
   }, []);
 
   const searchMovies = async () => {
-  if (!searchQuery.trim()) {
-    setSearchResults([]);
-    setShowDropdown(false);
-    return [];
-  }
-
-  try {
-    const res = await axios.get(
-      `https://www.omdbapi.com/?apikey=1d0ab4bc&s=${searchQuery}`
-    );
-
-    if (res.data.Search) {
-      const formatted = res.data.Search
-        .filter((movie) => movie.Type === "movie" || movie.Type === "series")
-        .map((movie) => ({
-          id: movie.imdbID,
-          title: movie.Title,
-          year: movie.Year,
-          poster: movie.Poster,
-        }));
-
-      setSearchResults(formatted);
-      setShowDropdown(true);
-      return formatted;
-    } else {
+    if (!searchQuery.trim()) {
       setSearchResults([]);
       setShowDropdown(false);
       return [];
     }
-  } catch (err) {
-    console.error("Search error:", err);
-    setSearchResults([]);
-    setShowDropdown(false);
-    return [];
-  }
-};
+
+    try {
+      const res = await axios.get(
+        `https://www.omdbapi.com/?apikey=1d0ab4bc&s=${searchQuery}`
+      );
+
+      if (res.data.Search) {
+        const formatted = res.data.Search
+          .filter((movie) => movie.Type === "movie" || movie.Type === "series")
+          .map((movie) => ({
+            id: movie.imdbID,
+            title: movie.Title,
+            year: movie.Year,
+            poster: movie.Poster,
+          }));
+
+        setSearchResults(formatted);
+        setShowDropdown(true);
+        return formatted;
+      } else {
+        setSearchResults([]);
+        setShowDropdown(false);
+        return [];
+      }
+    } catch (err) {
+      console.error("Search error:", err);
+      setSearchResults([]);
+      setShowDropdown(false);
+      return [];
+    }
+  };
 
   const handleSearchSubmit = async () => {
     const results = await searchMovies();
@@ -156,7 +157,7 @@ const HomePage = () => {
   return (
     <div style={styles.container}>
       <div style={styles.hero}>
-        <h1 style={styles.title}>VMDB</h1>
+        <img src={logo} alt="VMDB logo" style={styles.logo} />
         <p style={styles.subtitle}>
           Search movies, explore titles, and manage your watchlist all in one place.
         </p>
@@ -336,26 +337,30 @@ const styles = {
   },
 
   hero: {
-    marginBottom: "30px",
+    marginBottom: "20px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
     textAlign: "center",
-    padding: "30px 20px",
-    backgroundColor: "#1a1a1a",
-    borderRadius: "16px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.35)",
-  },
+    padding: "10px 0",     // 👈 WAY less padding
+},
 
-  title: {
-    fontSize: "48px",
+  logo: {
+    width: "160px",
+    height: "auto",
     marginBottom: "10px",
-    color: "#FFA500",
-  },
+    filter: "drop-shadow(0 6px 15px rgba(0,0,0,0.7))",
+},
 
   subtitle: {
-    fontSize: "18px",
-    color: "#cfcfcf",
-    maxWidth: "700px",
-    margin: "0 auto",
-  },
+    fontSize: "15px",
+    color: "#bdbdbd",
+    maxWidth: "450px",
+    textAlign: "center",
+    lineHeight: "1.4",
+    margin: 0,
+},
 
   searchWrapper: {
     position: "relative",
