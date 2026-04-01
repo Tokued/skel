@@ -18,24 +18,18 @@ const searchGetAllRoute = require("./routes/searchGetAll");
 const movieRoutes = require("./routes/movies");
 
 const reviewRoute = require("./routes/review.routes");
-app.use(express.json());
-app.use("/review", reviewRoute);
 
 const SERVER_PORT = process.env.SERVER_PORT || 8081;
 
 // Connect to database
 dbConnection();
 
-// Middleware
-app.use(cors({
-  origin: "http://localhost:8096",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
-}));
+// ✅ FIXED MIDDLEWARE
+app.use(cors());           // allow all requests (fixes ERR_NETWORK)
+app.use(express.json());   // only once
 
-app.options("*", cors());
-app.use(express.json());
+// Routes
+app.use("/reviews", reviewRoute);
 
 // ---------------- USER ROUTES ----------------
 app.use('/user', loginRoute);
@@ -44,7 +38,6 @@ app.use('/user', getAllUsersRoute);
 app.use('/user', getUserByIdRoute);
 app.use('/user', editUser);
 app.use('/user', deleteUser);
-
 
 // ---------------- SEARCH ROUTES ----------------
 app.use("/search", searchAddRoute);
@@ -59,7 +52,7 @@ app.use("/watchlist", require("./routes/watchlistAdd.js"));
 app.use("/watchlist", require("./routes/watchlistDelete.js"));
 app.use("/watchlist", require("./routes/watchlistGetAll.js"));
 
-// -----------------MOVIE ROUTES -------------------
+// ---------------- MOVIE ROUTES -------------------
 app.use("/movies", movieRoutes);
 
 // ---------------- HEALTH CHECK ----------------

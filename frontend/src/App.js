@@ -11,7 +11,7 @@ import Login from "./components/pages/loginPage";
 import Signup from "./components/pages/registerPage";
 import PrivateUserProfile from "./components/pages/privateUserProfilePage";
 import WatchlistPage from "./components/pages/watchlistPage";
-import Reviews from "./components/pages/Reviews"; // <-- Add this
+import Reviews from "./components/pages/Reviews";
 import getUserInfo from "./utilities/decodeJwt";
 import MoviePage from "./components/pages/moviePage";
 
@@ -29,16 +29,16 @@ const App = () => {
       <Navbar />
       <UserContext.Provider value={user}>
         <Routes>
-          <Route exact path="/" element={<LandingPage />} />
-          <Route exact path="/home" element={<HomePage />} />
-          <Route exact path="/login" element={<Login />} />
-          <Route exact path="/signup" element={<Signup />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/privateUserProfile" element={<PrivateUserProfile />} />
-          <Route exact path="/watchlist" element={<WatchlistPage />} />
+          <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/movies/:id" element={<MoviePage />} />
 
-          {/* Reviews page route */}
-          <Route exact path="/reviews" element={<Reviews />} />
+          {/* ✅ FIXED: pass movie ID into Reviews */}
+          <Route path="/reviews/:id" element={<Reviews />} />
         </Routes>
       </UserContext.Provider>
     </>
