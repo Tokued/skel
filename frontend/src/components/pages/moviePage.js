@@ -11,12 +11,12 @@ const MoviePage = () => {
 
   const userId = user?.id;
 
-  // Get user info
+  // Load user info
   useEffect(() => {
     setUser(getUserInfo());
   }, []);
 
-  // Fetch movie info
+  // Fetch movie details
   useEffect(() => {
     const fetchMovie = async () => {
       try {
@@ -47,17 +47,15 @@ const MoviePage = () => {
     checkWatchlist();
   }, [userId, id]);
 
-  // Toggle watchlist
+  // Add/remove from watchlist
   const toggleWatchlist = async () => {
-    if (!userId) return;
+    if (!userId) return alert("You must be logged in");
 
     try {
       if (isAdded) {
-        // Remove
         await axios.delete(`http://localhost:8081/watchlist/${userId}/${id}`);
         setIsAdded(false);
       } else {
-        // Add
         await axios.post("http://localhost:8081/watchlist/add", {
           userId,
           movieId: movie.id,
@@ -71,24 +69,40 @@ const MoviePage = () => {
   };
 
   if (!movie) {
-    return <p style={{ color: "white", padding: "20px" }}>Loading...</p>;
+    return <p className="text-white p-6 text-xl">Loading...</p>;
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.info}>
-          <h1>{movie.title}</h1>
-          <p><strong>ID:</strong> {movie.id}</p>
+    <div className="flex justify-center p-10 text-white">
+      <div className="bg-gray-900 p-8 rounded-lg shadow-lg max-w-4xl w-full flex gap-8">
+        
+        {/* Poster */}
+        <img
+          src={movie.poster}
+          alt={movie.title}
+          className="w-64 rounded-lg shadow-md"
+        />
 
-          {/* Toggle button */}
+        {/* Movie Info */}
+        <div className="flex flex-col justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-3">{movie.title}</h1>
+            <p className="text-gray-300 mb-2"><strong>Year:</strong> {movie.year}</p>
+            <p className="text-gray-300 mb-2"><strong>Genre:</strong> {movie.genre}</p>
+            <p className="text-gray-300 mb-2"><strong>Runtime:</strong> {movie.runtime}</p>
+            <p className="text-gray-300 mb-2"><strong>Rating:</strong> ⭐ {movie.rating}</p>
+
+            <p className="text-gray-200 mt-4 leading-relaxed">
+              {movie.plot}
+            </p>
+          </div>
+
+          {/* Watchlist Button */}
           <button
             onClick={toggleWatchlist}
-            style={{
-              ...styles.button,
-              backgroundColor: isAdded ? "#555" : "#e50914",
-              cursor: "pointer",
-            }}
+            className={`mt-6 px-5 py-3 rounded-md text-white font-semibold transition ${
+              isAdded ? "bg-gray-600" : "bg-red-600 hover:bg-red-700"
+            }`}
           >
             {isAdded ? "Added to Watchlist" : "Add to Watchlist"}
           </button>
@@ -96,16 +110,6 @@ const MoviePage = () => {
       </div>
     </div>
   );
-};
-
-const styles = {
-  button: {
-    marginTop: "20px",
-    padding: "10px 15px",
-    border: "none",
-    color: "white",
-    borderRadius: "5px",
-  },
 };
 
 export default MoviePage;
