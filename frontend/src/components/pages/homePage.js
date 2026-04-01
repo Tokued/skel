@@ -60,40 +60,42 @@ const HomePage = () => {
   }, []);
 
   const searchMovies = async () => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      setShowDropdown(false);
-      return [];
-    }
+  if (!searchQuery.trim()) {
+    setSearchResults([]);
+    setShowDropdown(false);
+    return [];
+  }
 
-    try {
-      const res = await axios.get(
-        `https://www.omdbapi.com/?apikey=1d0ab4bc&s=${searchQuery}`
-      );
+  try {
+    const res = await axios.get(
+      `https://www.omdbapi.com/?apikey=1d0ab4bc&s=${searchQuery}`
+    );
 
-      if (res.data.Search) {
-        const formatted = res.data.Search.map((movie) => ({
+    if (res.data.Search) {
+      const formatted = res.data.Search
+        .filter((movie) => movie.Type === "movie" || movie.Type === "series")
+        .map((movie) => ({
           id: movie.imdbID,
           title: movie.Title,
           year: movie.Year,
           poster: movie.Poster,
         }));
 
-        setSearchResults(formatted);
-        setShowDropdown(true);
-        return formatted;
-      } else {
-        setSearchResults([]);
-        setShowDropdown(false);
-        return [];
-      }
-    } catch (err) {
-      console.error("Search error:", err);
+      setSearchResults(formatted);
+      setShowDropdown(true);
+      return formatted;
+    } else {
       setSearchResults([]);
       setShowDropdown(false);
       return [];
     }
-  };
+  } catch (err) {
+    console.error("Search error:", err);
+    setSearchResults([]);
+    setShowDropdown(false);
+    return [];
+  }
+};
 
   const handleSearchSubmit = async () => {
     const results = await searchMovies();

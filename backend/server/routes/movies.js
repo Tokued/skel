@@ -21,11 +21,16 @@ router.get("/search", async (req, res) => {
       return res.json([]);
     }
 
-    const movies = response.data.Search.map((movie) => ({
+    const filteredResults = response.data.Search.filter(
+      (item) => item.Type === "movie" || item.Type === "series"
+    );
+
+    const movies = filteredResults.map((movie) => ({
       id: movie.imdbID,
       title: movie.Title,
       year: movie.Year,
       poster: movie.Poster,
+      type: movie.Type,
     }));
 
     res.json(movies);
