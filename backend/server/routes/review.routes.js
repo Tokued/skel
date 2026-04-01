@@ -38,4 +38,18 @@ router.get("/user/:userId", async (req, res) => {
     }
 });
 
+// Get reviews by movie
+router.get("/movie/:movieId", async (req, res) => {
+    try {
+        const { movieId } = req.params;
+        const reviews = await Review.find({ movieId });
+        res.status(200).json({
+            message: `Reviews for movie ${movieId} fetched successfully`,
+            reviews,
+        });
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching movie reviews", error: err.message });
+    }
+});
+
 module.exports = router;
