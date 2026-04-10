@@ -100,13 +100,16 @@ export default function Navbar() {
 
   // 🔘 SUBMIT SEARCH
   const handleSearchSubmit = async (e) => {
-    e.preventDefault();
-    await searchMovies();
+  e.preventDefault();
 
-    if (searchQuery.trim()) {
-      navigate(`/home?query=${encodeURIComponent(searchQuery)}`);
-    }
-  };
+  if (!searchQuery.trim()) return;
+
+  setShowDropdown(false);
+
+  navigate(
+    `/search?query=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(selectedCategory)}`
+  );
+};
 
   // 🎬 CLICK MOVIE
   const handleMovieClick = (movieId) => {

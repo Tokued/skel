@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/vmdb-logo.png";
+import TrailerRow from "../TrailerRow";
 
 const topMoviesSeed = [
   { id: "tt15398776", title: "Oppenheimer", year: "2023" },
@@ -48,56 +49,60 @@ const HomePage = () => {
   }, []);
 
   return (
-    <div style={styles.container}>
-      <div style={styles.hero}>
-        <img src={logo} alt="VMDB logo" style={styles.logo} />
-        <p style={styles.subtitle}>
-          Search movies, explore titles, and manage your watchlist all in one place.
-        </p>
-      </div>
+  <div style={styles.container}>
+    <div style={styles.hero}>
+      <img src={logo} alt="VMDB logo" style={styles.logo} />
+      <p style={styles.subtitle}>
+        Search movies, explore titles, and manage your watchlist all in one place.
+      </p>
+    </div>
 
-      <div style={styles.topMoviesSection}>
-        <h2 style={styles.sectionTitle}>Top Picks</h2>
-        <p style={styles.topMoviesSubtitle}>Popular movies to get you started</p>
+    <div style={styles.topMoviesSection}>
+      <h2 style={styles.sectionTitle}>Top Picks</h2>
+      <p style={styles.topMoviesSubtitle}>Popular movies to get you started</p>
 
-        <div style={styles.scrollRow}>
-          {topMovies.map((movie) => (
-            <div
-              key={movie.id}
-              style={styles.topMovieCard}
-              onClick={() => navigate(`/movies/${movie.id}`)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "scale(1.05)";
-                e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.4)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              {movie.poster ? (
-                <img
-                  src={movie.poster}
-                  alt={movie.title}
-                  style={styles.topMoviePoster}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              ) : (
-                <div style={styles.noTopPoster}>No Image</div>
-              )}
+      <div style={styles.scrollRow}>
+        {topMovies.map((movie) => (
+          <div
+            key={movie.id}
+            style={styles.topMovieCard}
+            onClick={() => navigate(`/movies/${movie.id}`)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.05)";
+              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
+          >
+            {movie.poster ? (
+              <img
+                src={movie.poster}
+                alt={movie.title}
+                style={styles.topMoviePoster}
+                onError={(e) => {
+                  e.target.style.display = "none";
+                }}
+              />
+            ) : (
+              <div style={styles.noTopPoster}>No Image</div>
+            )}
 
-              <div style={styles.cardContent}>
-                <h4 style={styles.movieTitle}>{movie.title}</h4>
-                <p style={styles.year}>{movie.year}</p>
-              </div>
+            <div style={styles.cardContent}>
+              <h4 style={styles.movieTitle}>{movie.title}</h4>
+              <p style={styles.year}>{movie.year}</p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
-  );
+
+    {/* 👇 ADD THIS RIGHT HERE */}
+    <TrailerRow />
+
+  </div>
+);
 };
 
 const styles = {

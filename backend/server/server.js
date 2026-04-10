@@ -16,6 +16,7 @@ const deleteUser = require('./routes/userDeleteAll');
 const searchAddRoute = require("./routes/searchAdd");
 const searchGetAllRoute = require("./routes/searchGetAll");
 const movieRoutes = require("./routes/movies");
+const trailerGet = require("./routes/trailerGet");
 
 const reviewRoute = require("./routes/review.routes");
 
@@ -54,6 +55,9 @@ app.use("/watchlist", require("./routes/watchlistGetAll.js"));
 
 // ---------------- MOVIE ROUTES -------------------
 app.use("/movies", movieRoutes);
+
+// ---------------- TRAILER ROUTES ----------------
+app.use("/trailers", trailerGet);
 
 // ---------------- HEALTH CHECK ----------------
 app.get("/", (req, res) => {

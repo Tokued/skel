@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
+import MovieTrailer from "../MovieTrailer";
 
 const MoviePage = () => {
   const { id } = useParams();
@@ -156,20 +157,36 @@ const MoviePage = () => {
       <div className="max-w-5xl w-full flex flex-col gap-8">
 
         {/* MOVIE INFO */}
-        <div className="bg-gray-900 p-8 rounded-lg flex gap-8">
-          <img src={movie.poster} className="w-64 rounded-lg" />
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold">{movie.title}</h1>
-            <p>{movie.plot}</p>
+        <div className="bg-gray-900 p-8 rounded-lg">
+          <h1 className="text-4xl font-bold text-center mb-8">{movie.title}</h1>
 
-            <button
-              onClick={toggleWatchlist}
-              className="mt-6 px-5 py-3 bg-red-600 rounded"
-            >
-              {isAdded ? "Added" : "Add to Watchlist"}
-            </button>
-          </div>
+        <div className="flex gap-8 items-stretch flex-wrap lg:flex-nowrap">
+          <div className="w-64 flex-shrink-0">
+            <img
+            src={movie.poster}
+            alt={movie.title}
+            className="w-64 h-[384px] object-cover rounded-lg"
+          />
         </div>
+
+    <div className="flex-1 min-w-[300px] rounded-xl overflow-hidden border border-gray-700 shadow-2xl shadow-black/60 bg-black">
+      <MovieTrailer imdbID={movie.id} title={movie.title} />
+    </div>
+  </div>
+
+  <div className="mt-8">
+    <p className="text-lg leading-8">{movie.plot}</p>
+
+    <div className="flex justify-center">
+      <button
+        onClick={toggleWatchlist}
+        className="mt-6 px-6 py-3 bg-red-600 rounded text-lg hover:bg-red-800 hover:scale-105 transition duration-200"
+>
+        {isAdded ? "Added" : "Add to Watchlist"}
+      </button>
+    </div>
+  </div>
+</div>
 
         {/* ADD REVIEW */}
         <div className="bg-gray-900 p-6 rounded-lg">
