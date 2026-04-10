@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
@@ -13,7 +13,12 @@ const MoviePage = () => {
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
 
-  const userId = user?.id;
+  // ✨ EDIT MODAL STATE
+  const [editingReview, setEditingReview] = useState(null);
+  const [editRating, setEditRating] = useState(0);
+  const [editText, setEditText] = useState("");
+
+  const userId = user?.id || user?._id;
 
   useEffect(() => {
     setUser(getUserInfo());
@@ -32,31 +37,29 @@ const MoviePage = () => {
     fetchMovie();
   }, [id]);
 
+  const fetchReviews = useCallback(async () => {
+    try {
+      const res = await axios.get(
+        `http://localhost:8081/reviews/movie/${id}`
+      );
+      setReviews(res.data.reviews || []);
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+    }
+  }, [id]);
+
   useEffect(() => {
-    const checkWatchlist = async () => {
-      if (!userId || !id) return;
-
-      try {
-        const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
-        const exists = res.data.some((m) => m.movieId === id);
-        setIsAdded(exists);
-      } catch (err) {
-        console.error("Error checking watchlist:", err);
-      }
-    };
-
-    checkWatchlist();
-  }, [userId, id]);
+    fetchReviews();
+  }, [fetchReviews]);
 
   const toggleWatchlist = async () => {
-    if (!userId) {
-      alert("You must be logged in");
-      return;
-    }
+    if (!userId) return alert("You must be logged in");
 
     try {
       if (isAdded) {
-        await axios.delete(`http://localhost:8081/watchlist/${userId}/${id}`);
+        await axios.delete(
+          `http://localhost:8081/watchlist/${userId}/${id}`
+        );
         setIsAdded(false);
       } else {
         await axios.post("http://localhost:8081/watchlist/add", {
@@ -71,38 +74,32 @@ const MoviePage = () => {
     }
   };
 
-  const fetchReviews = async () => {
-    try {
-      const res = await axios.get(`http://localhost:8081/reviews/movie/${id}`);
-      setReviews(res.data.reviews || []);
-    } catch (err) {
-      console.error("Error fetching reviews:", err);
-      setReviews([]);
-    }
+  // ⭐ STAR CLICK HANDLER
+  const StarSelector = ({ value, setValue }) => {
+    return (
+      <div style={{ fontSize: "22px", cursor: "pointer" }}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <span
+            key={n}
+            onClick={() => setValue(n)}
+            style={{ color: n <= value ? "#f5c518" : "#555" }}
+          >
+            ★
+          </span>
+        ))}
+      </div>
+    );
   };
-
-  useEffect(() => {
-    if (id) fetchReviews();
-  }, [id]);
 
   const submitReview = async (e) => {
     e.preventDefault();
-
-    if (!userId) {
-      alert("You must be logged in to submit a review.");
-      return;
-    }
-
-    if (!rating || !reviewText.trim()) {
-      alert("Please select a rating and enter your review text.");
-      return;
-    }
+    if (!userId) return alert("Login required");
 
     try {
       await axios.post("http://localhost:8081/reviews/add", {
         movieId: id,
         userId,
-        rating: Number(rating),
+        rating,
         reviewText,
       });
 
@@ -110,118 +107,168 @@ const MoviePage = () => {
       setReviewText("");
       fetchReviews();
     } catch (err) {
-      console.error("Failed to submit review:", err);
-      alert(err.response?.data?.message || "Failed to submit review");
+      alert(err.response?.data?.message || "Error submitting review");
     }
   };
 
-  if (!movie) {
-    return <p className="text-white p-6 text-xl">Loading...</p>;
-  }
+  // ✏️ OPEN EDIT MODAL
+  const openEdit = (r) => {
+    setEditingReview(r);
+    setEditRating(r.rating);
+    setEditText(r.reviewText);
+  };
+
+  // 💾 SAVE EDIT
+  const saveEdit = async () => {
+    try {
+      await axios.put(`http://localhost:8081/reviews/${editingReview._id}`, {
+        userId,
+        rating: editRating,
+        reviewText: editText,
+      });
+
+      setEditingReview(null);
+      fetchReviews();
+    } catch (err) {
+      alert("Failed to update review");
+    }
+  };
+
+  // 🗑 DELETE
+  const deleteReview = async (id) => {
+    if (!window.confirm("Delete this review?")) return;
+
+    try {
+      await axios.delete(`http://localhost:8081/reviews/${id}`, {
+        data: { userId },
+      });
+
+      fetchReviews();
+    } catch (err) {
+      alert("Failed to delete review");
+    }
+  };
+
+  if (!movie) return <p className="text-white p-6">Loading...</p>;
 
   return (
     <div className="flex justify-center p-10 text-white">
       <div className="max-w-5xl w-full flex flex-col gap-8">
-        <div className="bg-gray-900 p-8 rounded-lg shadow-lg w-full flex gap-8">
-          <img
-            src={movie.poster}
-            alt={movie.title}
-            className="w-64 rounded-lg shadow-md"
-          />
 
-          <div className="flex flex-col justify-between flex-1">
-            <div>
-              <h1 className="text-4xl font-bold mb-3">{movie.title}</h1>
-              <p className="text-gray-300 mb-2">
-                <strong>Year:</strong> {movie.year}
-              </p>
-              <p className="text-gray-300 mb-2">
-                <strong>Genre:</strong> {movie.genre}
-              </p>
-              <p className="text-gray-300 mb-2">
-                <strong>Runtime:</strong> {movie.runtime}
-              </p>
-              <p className="text-gray-300 mb-2">
-                <strong>Rating:</strong> ⭐ {movie.rating}
-              </p>
-
-              <p className="text-gray-200 mt-4 leading-relaxed">
-                {movie.plot}
-              </p>
-            </div>
+        {/* MOVIE INFO */}
+        <div className="bg-gray-900 p-8 rounded-lg flex gap-8">
+          <img src={movie.poster} className="w-64 rounded-lg" />
+          <div className="flex-1">
+            <h1 className="text-4xl font-bold">{movie.title}</h1>
+            <p>{movie.plot}</p>
 
             <button
               onClick={toggleWatchlist}
-              className={`mt-6 px-5 py-3 rounded-md text-white font-semibold transition ${
-                isAdded ? "bg-gray-600" : "bg-red-600 hover:bg-red-700"
-              }`}
+              className="mt-6 px-5 py-3 bg-red-600 rounded"
             >
-              {isAdded ? "Added to Watchlist" : "Add to Watchlist"}
+              {isAdded ? "Added" : "Add to Watchlist"}
             </button>
           </div>
         </div>
 
-        <div className="bg-gray-900 p-8 rounded-lg shadow-lg w-full">
-          <h2 className="text-3xl font-bold mb-6">Add a Review</h2>
+        {/* ADD REVIEW */}
+        <div className="bg-gray-900 p-6 rounded-lg">
+          <h2 className="text-2xl mb-3">Add Review</h2>
 
-          <form
-            onSubmit={submitReview}
-            className="flex flex-col md:flex-row gap-3 mb-8"
+          <StarSelector value={rating} setValue={setRating} />
+
+          <input
+            value={reviewText}
+            onChange={(e) => setReviewText(e.target.value)}
+            className="w-full mt-3 p-2 bg-gray-800 rounded"
+            placeholder="Write review..."
+          />
+
+          <button
+            onClick={submitReview}
+            className="mt-3 bg-red-600 px-4 py-2 rounded"
           >
-            <select
-              value={rating}
-              onChange={(e) => setRating(e.target.value)}
-              className="px-3 py-2 rounded-md bg-gray-800 border border-gray-600 text-white"
-            >
-              <option value={0}>Select Rating</option>
-              <option value={1}>⭐ 1</option>
-              <option value={2}>⭐⭐ 2</option>
-              <option value={3}>⭐⭐⭐ 3</option>
-              <option value={4}>⭐⭐⭐⭐ 4</option>
-              <option value={5}>⭐⭐⭐⭐⭐ 5</option>
-            </select>
+            Submit
+          </button>
+        </div>
 
-            <input
-              type="text"
-              placeholder="Write your review..."
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-md bg-gray-800 border border-gray-600 text-white"
-            />
+        {/* REVIEWS */}
+        <div className="bg-gray-900 p-6 rounded-lg">
+          <h2 className="text-2xl mb-4">Reviews</h2>
 
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white font-semibold"
-            >
-              Submit
-            </button>
-          </form>
+          {reviews.map((r) => (
+            <div key={r._id} className="bg-gray-800 p-4 rounded mb-3">
+              <div className="flex justify-between">
+                <strong>{r.userId?.username || "User"}</strong>
 
-          <h2 className="text-3xl font-bold mb-4">Reviews</h2>
-
-          {reviews.length === 0 ? (
-            <p className="text-gray-300">No reviews yet.</p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {reviews.map((r) => (
-                <div
-                  key={r._id}
-                  className="bg-gray-800 p-4 rounded-md border border-gray-700"
-                >
-                  <p className="mb-2">
-                    <strong>User:</strong> {r.userId} |{" "}
-                    <strong>Rating:</strong> {"⭐".repeat(r.rating)}
-                  </p>
-                  <p className="text-gray-200">{r.reviewText}</p>
-                  <small className="text-gray-400">
-                    Posted on {new Date(r.createdAt).toLocaleString()}
-                  </small>
+                <div>
+                  {"⭐".repeat(r.rating)}
                 </div>
-              ))}
+              </div>
+
+              <p className="mt-2">{r.reviewText}</p>
+
+              <small className="text-gray-400">
+                {new Date(r.createdAt).toLocaleString()}
+                {r.updatedAt && r.updatedAt !== r.createdAt && (
+                  <span> • edited</span>
+                )}
+              </small>
+
+              {r.userId?._id === userId && (
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => openEdit(r)}
+                    className="bg-blue-600 px-3 py-1 rounded"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => deleteReview(r._id)}
+                    className="bg-red-600 px-3 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </div>
       </div>
+
+      {/* ✨ EDIT MODAL */}
+      {editingReview && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center">
+          <div className="bg-gray-900 p-6 rounded w-96">
+            <h2 className="text-xl mb-3">Edit Review</h2>
+
+            <StarSelector value={editRating} setValue={setEditRating} />
+
+            <input
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              className="w-full mt-3 p-2 bg-gray-800 rounded"
+            />
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setEditingReview(null)}
+                className="bg-gray-600 px-3 py-1 rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={saveEdit}
+                className="bg-green-600 px-3 py-1 rounded"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

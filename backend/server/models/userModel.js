@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-//user schema/model
+// user schema/model
 const newUserSchema = new mongoose.Schema(
   {
     username: {
@@ -14,9 +14,9 @@ const newUserSchema = new mongoose.Schema(
       label: "email",
     },
     password: {
-      required: true,
       type: String,
-      min : 8
+      required: true,
+      min: 8,
     },
     date: {
       type: Date,
@@ -26,4 +26,5 @@ const newUserSchema = new mongoose.Schema(
   { collection: "users" }
 );
 
-module.exports = mongoose.model('users', newUserSchema)
+// ✅ FIX: must be "User" (not "users") for populate to work
+module.exports = mongoose.model("User", newUserSchema);
