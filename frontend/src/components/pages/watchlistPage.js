@@ -52,8 +52,15 @@ const WatchlistPage = () => {
     updateState(id, res.data);
   };
 
+  // ⭐ 5-star rating system
   const setRating = async (id, rating) => {
-    const res = await axios.put(`${API}/rate/${userId}/${id}`, { rating });
+    const numeric = Number(rating);
+    if (numeric < 1 || numeric > 5) return;
+
+    const res = await axios.put(`${API}/rate/${userId}/${id}`, {
+      rating: numeric,
+    });
+
     updateState(id, res.data);
   };
 
@@ -127,15 +134,8 @@ const WatchlistPage = () => {
                   transition: "all 0.25s ease",
                 }}
               >
-                {/* Poster wrapper with fixed aspect ratio */}
-                <div
-                  style={{
-                    width: "100%",
-                    aspectRatio: "2 / 3",
-                    overflow: "hidden",
-                    position: "relative",
-                  }}
-                >
+                {/* Poster */}
+                <div style={{ width: "100%", aspectRatio: "2/3", position: "relative" }}>
                   <img
                     src={movie.poster}
                     onClick={() => navigate(`/movies/${movie.id}`)}
@@ -170,7 +170,7 @@ const WatchlistPage = () => {
                     </button>
                   )}
 
-                  {/* Hover Overlay */}
+                  {/* Overlay */}
                   {isHovered && (
                     <div
                       style={{
@@ -189,15 +189,18 @@ const WatchlistPage = () => {
                         {item?.watched ? "Unwatch" : "Mark Watched"}
                       </button>
 
+                      {/* 5-star rating */}
                       {item?.watched && (
                         <select
                           value={item?.rating || ""}
                           onChange={(e) => setRating(movie.id, e.target.value)}
                           style={overlayBtn}
                         >
-                          <option value="">Rate</option>
+                          <option value="">Rate (1-5)</option>
                           {[1, 2, 3, 4, 5].map((r) => (
-                            <option key={r} value={r}>{r} ⭐</option>
+                            <option key={r} value={r}>
+                              {r} ⭐
+                            </option>
                           ))}
                         </select>
                       )}
@@ -213,14 +216,10 @@ const WatchlistPage = () => {
                 </div>
               </div>
 
-              {/* Title OUTSIDE the poster */}
+              {/* Title + Rating */}
               <div
                 onClick={() => navigate(`/movies/${movie.id}`)}
-                style={{
-                  marginTop: 10,
-                  padding: "0 4px",
-                  cursor: "pointer",
-                }}
+                style={{ marginTop: 10, padding: "0 4px", cursor: "pointer" }}
               >
                 <h4
                   style={{
@@ -233,6 +232,12 @@ const WatchlistPage = () => {
                 >
                   {movie.title}
                 </h4>
+
+                {item?.rating && (
+                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 4 }}>
+                    Rated: {item.rating}/5 ⭐
+                  </div>
+                )}
               </div>
             </div>
           );
