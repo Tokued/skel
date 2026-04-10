@@ -47,6 +47,24 @@
   padding: 0.4rem 0.75rem;
   box-shadow: none !important;
 }
+.vmdb-filters-button .dropdown-toggle {
+  background: transparent !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  box-shadow: none !important;
+  white-space: nowrap;
+}
+
+.vmdb-filters-button .dropdown-toggle::after {
+  margin-left: 6px;
+}
+
+.vmdb-filters-button {
+  margin-right: 14px;
+  flex-shrink: 0;
+}
 
 .vmdb-menu-dropdown .dropdown-menu {
   background-color: #1b1b1b;
@@ -73,6 +91,10 @@
 .vmdb-search-form {
   width: 100%;
 }
+.vmdb-search-form .input-group {
+  display: flex;
+  align-items: center;
+}
 
 .vmdb-search-category {
   max-width: 95px;
@@ -83,6 +105,7 @@
 .vmdb-search-input {
   border-left: none;
   border-right: none;
+  min-width: 0;
 }
 
 .vmdb-search-button {
@@ -179,4 +202,18 @@
   .vmdb-logo {
     max-height: 54px;
   }
+}
+/* ===== FILTER BUTTON SPACING FIX ===== */
+
+.vmdb-filters-button {
+  margin-right: 10px !important;
+}
+
+.vmdb-filters-button .dropdown-toggle {
+  margin-right: 10px !important;
+  border-radius: 6px 0 0 6px !important;
+}
+
+.vmdb-search-input {
+  margin-left: 6px !important;
 }

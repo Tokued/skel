@@ -3,7 +3,6 @@ import axios from "axios";
 import getUserInfo from "../utilities/decodeJwt";
 import { Link, useNavigate } from "react-router-dom";
 import Container from "react-bootstrap/Container";
-import Nav from "react-bootstrap/Nav";
 import ReactNavbar from "react-bootstrap/Navbar";
 import NavDropdown from "react-bootstrap/NavDropdown";
 import Form from "react-bootstrap/Form";
@@ -17,7 +16,10 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedGenre, setSelectedGenre] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
 
   const navigate = useNavigate();
   const searchRef = useRef(null);
@@ -25,6 +27,11 @@ export default function Navbar() {
   useEffect(() => {
     setUser(getUserInfo());
   }, []);
+
+  const years = [];
+  for (let y = 2026; y >= 1900; y--) {
+    years.push(String(y));
+  }
 
   // 🔍 SEARCH FUNCTION
   const searchMovies = async () => {
@@ -36,7 +43,7 @@ export default function Navbar() {
 
     try {
       const res = await axios.get(
-        `https://www.omdbapi.com/?apikey=1d0ab4bc&s=${searchQuery}`
+        `https://www.omdbapi.com/?apikey=1d0ab4bc&s=${encodeURIComponent(searchQuery)}`
       );
 
       if (res.data.Search) {
@@ -100,16 +107,31 @@ export default function Navbar() {
 
   // 🔘 SUBMIT SEARCH
   const handleSearchSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!searchQuery.trim()) return;
+    const params = new URLSearchParams();
 
-  setShowDropdown(false);
+    if (searchQuery.trim()) {
+      params.set("query", searchQuery.trim());
+    }
 
-  navigate(
-    `/search?query=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(selectedCategory)}`
-  );
-};
+    if (selectedCategory && selectedCategory !== "All") {
+      params.set("category", selectedCategory);
+    }
+
+    if (selectedGenre) {
+      params.set("genre", selectedGenre);
+    }
+
+    if (selectedYear) {
+      params.set("year", selectedYear);
+    }
+
+    if ([...params.keys()].length === 0) return;
+
+    setShowDropdown(false);
+    navigate(`/search?${params.toString()}`);
+  };
 
   // 🎬 CLICK MOVIE
   const handleMovieClick = (movieId) => {
@@ -120,7 +142,6 @@ export default function Navbar() {
   return (
     <ReactNavbar bg="dark" variant="dark" expand="lg" className="vmdb-navbar">
       <Container fluid className="vmdb-navbar-container">
-
         {/* LEFT */}
         <div className="vmdb-navbar-left">
           <Link to="/home" className="vmdb-logo-link">
@@ -151,16 +172,73 @@ export default function Navbar() {
         <div className="vmdb-navbar-center" ref={searchRef}>
           <Form className="vmdb-search-form" onSubmit={handleSearchSubmit}>
             <InputGroup>
-
-              <Form.Select
-                className="vmdb-search-category"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+              <NavDropdown
+                title="Filters"
+                id="vmdb-filters-dropdown"
+                menuVariant="dark"
+                className="vmdb-menu-dropdown vmdb-filters-button"
               >
-                <option value="All">All</option>
-                <option value="Movies">Movies</option>
-                <option value="Series">Series</option>
-              </Form.Select>
+                <div style={styles.filterMenu}>
+                  <div style={styles.filterGroup}>
+                    <div style={styles.filterLabel}>Type</div>
+                    <Form.Select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      style={styles.select}
+                    >
+                      <option value="All">All</option>
+                      <option value="Movies">Movies</option>
+                      <option value="Series">TV Shows</option>
+                    </Form.Select>
+                  </div>
+
+                  <div style={styles.filterGroup}>
+                    <div style={styles.filterLabel}>Released</div>
+                    <Form.Select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      style={styles.select}
+                    >
+                      <option value="">All Years</option>
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </div>
+
+                  <div style={styles.filterGroup}>
+                    <div style={styles.filterLabel}>Genre</div>
+                    <Form.Select
+                      value={selectedGenre}
+                      onChange={(e) => setSelectedGenre(e.target.value)}
+                      style={styles.select}
+                    >
+                      <option value="">All Genres</option>
+                      <option value="Action">Action</option>
+                      <option value="Adventure">Adventure</option>
+                      <option value="Animation">Animation</option>
+                      <option value="Comedy">Comedy</option>
+                      <option value="Crime">Crime</option>
+                      <option value="Documentary">Documentary</option>
+                      <option value="Drama">Drama</option>
+                      <option value="Family">Family</option>
+                      <option value="Fantasy">Fantasy</option>
+                      <option value="History">History</option>
+                      <option value="Horror">Horror</option>
+                      <option value="Music">Music</option>
+                      <option value="Mystery">Mystery</option>
+                      <option value="Romance">Romance</option>
+                      <option value="Science Fiction">Science Fiction</option>
+                      <option value="TV Movie">TV Movie</option>
+                      <option value="Thriller">Thriller</option>
+                      <option value="War">War</option>
+                      <option value="Western">Western</option>
+                    </Form.Select>
+                  </div>
+                </div>
+              </NavDropdown>
 
               <Form.Control
                 type="text"
@@ -178,7 +256,6 @@ export default function Navbar() {
               <Button type="submit" variant="light" className="vmdb-search-button">
                 Search
               </Button>
-
             </InputGroup>
           </Form>
 
@@ -215,8 +292,30 @@ export default function Navbar() {
             </div>
           )}
         </div>
-
       </Container>
     </ReactNavbar>
   );
 }
+
+const styles = {
+  filterMenu: {
+    padding: "12px",
+    minWidth: "240px",
+  },
+  filterGroup: {
+    marginBottom: "12px",
+  },
+  filterLabel: {
+    fontSize: "13px",
+    fontWeight: "600",
+    marginBottom: "6px",
+    color: "#fff",
+  },
+  select: {
+    minWidth: "100%",
+    backgroundColor: "#1b1b1b",
+    color: "white",
+    border: "1px solid #333",
+  },
+  
+};
