@@ -3,222 +3,253 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
 
+const API = "http://localhost:8081/watchlist";
+
 const WatchlistPage = () => {
   const [watchlist, setWatchlist] = useState([]);
   const [movies, setMovies] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
-  const navigate = useNavigate();
+  const [hovered, setHovered] = useState(null);
 
+  const navigate = useNavigate();
   const userId = user?.id;
 
-  // Get user info
   useEffect(() => {
     setUser(getUserInfo());
   }, []);
 
-  // Fetch watchlist
   useEffect(() => {
     const fetchWatchlist = async () => {
       if (!userId) return;
-      try {
-        const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
-        setWatchlist(res.data);
 
-        // Fetch full movie details for posters
-        const movieDetailsPromises = res.data.map((movie) =>
-          axios.get(`http://localhost:8081/movies/${movie.movieId}`)
-        );
-        const moviesRes = await Promise.all(movieDetailsPromises);
-        setMovies(moviesRes.map((r) => r.data));
-      } catch (err) {
-        console.error("Error fetching watchlist:", err);
-      }
+      const res = await axios.get(`${API}/${userId}`);
+      setWatchlist(res.data);
+
+      const movieDetails = await Promise.all(
+        res.data.map((m) => axios.get(`http://localhost:8081/movies/${m.movieId}`))
+      );
+
+      setMovies(movieDetails.map((r) => r.data));
     };
 
     fetchWatchlist();
   }, [userId]);
 
-  // Remove movie
-  const removeMovie = async (id) => {
-    try {
-      await axios.delete(`http://localhost:8081/watchlist/${userId}/${id}`);
-      setMovies((prev) => prev.filter((m) => m.id !== id));
-      setWatchlist((prev) => prev.filter((m) => m.movieId !== id));
-    } catch (err) {
-      alert("Error removing movie");
-    }
+  const getItem = (id) => watchlist.find((m) => m.movieId === id);
+
+  const updateState = (movieId, newData) => {
+    setWatchlist((prev) =>
+      prev.map((m) => (m.movieId === movieId ? { ...m, ...newData } : m))
+    );
   };
 
-  // Filter movies based on search query
+  const toggleWatched = async (id) => {
+    const item = getItem(id);
+    const res = await axios.put(`${API}/watched/${userId}/${id}`, {
+      watched: !item?.watched,
+    });
+    updateState(id, res.data);
+  };
+
+  const setRating = async (id, rating) => {
+    const res = await axios.put(`${API}/rate/${userId}/${id}`, { rating });
+    updateState(id, res.data);
+  };
+
+  const toggleFavorite = async (id) => {
+    const item = getItem(id);
+    const res = await axios.put(`${API}/favorite/${userId}/${id}`, {
+      favorite: !item?.favorite,
+    });
+    updateState(id, res.data);
+  };
+
+  const removeMovie = async (id) => {
+    await axios.delete(`${API}/${userId}/${id}`);
+    setMovies((prev) => prev.filter((m) => m.id !== id));
+    setWatchlist((prev) => prev.filter((m) => m.movieId !== id));
+  };
+
   const filteredMovies = movies.filter((movie) =>
     movie.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (!userId) {
-    return (
-      <div style={{ padding: "20px" }}>
-        <h4>Log in to view this page.</h4>
-      </div>
-    );
-  }
+  if (!userId) return <h3>Login required</h3>;
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>My Watchlist</h1>
+    <div style={{ padding: 40, background: "#0b0b0b", color: "white", minHeight: "100vh" }}>
+      <h1 style={{ marginBottom: 25 }}>My Watchlist</h1>
 
-      {/* SEARCH BAR */}
-      <div style={styles.searchBar}>
-        <input
-          type="text"
-          placeholder="Search your watchlist..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={styles.input}
-        />
-      </div>
+      <input
+        placeholder="Search movies..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        style={{
+          marginBottom: 35,
+          padding: 14,
+          width: "100%",
+          borderRadius: 10,
+          border: "1px solid #222",
+          background: "#1a1a1a",
+          color: "#aaa",
+          outline: "none",
+          fontSize: 15,
+        }}
+      />
 
-      {filteredMovies.length === 0 ? (
-        <p style={{ color: "#aaa", textAlign: "center", marginTop: "50px" }}>
-          {searchQuery ? "No results found." : "Your watchlist is empty."}
-        </p>
-      ) : (
-        <div style={styles.grid}>
-          {filteredMovies.map((movie) => (
-            <div
-              key={movie.id}
-              style={styles.card}
-              onClick={() => navigate(`/movies/${movie.id}`)}
-            >
-              {movie.poster && movie.poster !== "N/A" ? (
-                <img src={movie.poster} alt={movie.title} style={styles.poster} />
-              ) : (
-                <div style={styles.noPoster}>No Image</div>
-              )}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+          gap: 30,
+        }}
+      >
+        {filteredMovies.map((movie) => {
+          const item = getItem(movie.id);
+          const isHovered = hovered === movie.id;
 
-              <div className="overlay" style={styles.overlay}>
-                <h4 style={styles.movieTitle}>{movie.title}</h4>
-                <p style={styles.meta}>
-                  Added:{" "}
-                  {new Date(
-                    watchlist.find((m) => m.movieId === movie.id)?.addedAt
-                  ).toLocaleDateString()}
-                </p>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeMovie(movie.id);
+          return (
+            <div key={movie.id}>
+              {/* CARD */}
+              <div
+                onMouseEnter={() => setHovered(movie.id)}
+                onMouseLeave={() => setHovered(null)}
+                style={{
+                  background: "#141414",
+                  borderRadius: 18,
+                  overflow: "hidden",
+                  position: "relative",
+                  boxShadow: isHovered
+                    ? "0 12px 35px rgba(0,0,0,0.9)"
+                    : "0 4px 15px rgba(0,0,0,0.5)",
+                  transform: isHovered ? "scale(1.03)" : "scale(1)",
+                  transition: "all 0.25s ease",
+                }}
+              >
+                {/* Poster wrapper with fixed aspect ratio */}
+                <div
+                  style={{
+                    width: "100%",
+                    aspectRatio: "2 / 3",
+                    overflow: "hidden",
+                    position: "relative",
                   }}
-                  style={styles.removeButton}
                 >
-                  Remove
-                </button>
+                  <img
+                    src={movie.poster}
+                    onClick={() => navigate(`/movies/${movie.id}`)}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      cursor: "pointer",
+                      display: "block",
+                    }}
+                  />
+
+                  {/* Favorite */}
+                  {item?.watched && (
+                    <button
+                      onClick={() => toggleFavorite(movie.id)}
+                      style={{
+                        position: "absolute",
+                        top: 12,
+                        right: 12,
+                        background: "rgba(0,0,0,0.7)",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: 36,
+                        height: 36,
+                        color: item?.favorite ? "#ff4d6d" : "white",
+                        cursor: "pointer",
+                        fontSize: 16,
+                      }}
+                    >
+                      {item?.favorite ? "❤" : "♡"}
+                    </button>
+                  )}
+
+                  {/* Hover Overlay */}
+                  {isHovered && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        background: "rgba(0,0,0,0.85)",
+                        padding: 12,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
+                      <button onClick={() => toggleWatched(movie.id)} style={overlayBtn}>
+                        {item?.watched ? "Unwatch" : "Mark Watched"}
+                      </button>
+
+                      {item?.watched && (
+                        <select
+                          value={item?.rating || ""}
+                          onChange={(e) => setRating(movie.id, e.target.value)}
+                          style={overlayBtn}
+                        >
+                          <option value="">Rate</option>
+                          {[1, 2, 3, 4, 5].map((r) => (
+                            <option key={r} value={r}>{r} ⭐</option>
+                          ))}
+                        </select>
+                      )}
+
+                      <button
+                        onClick={() => removeMovie(movie.id)}
+                        style={{ ...overlayBtn, color: "#ff4d4d" }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Title OUTSIDE the poster */}
+              <div
+                onClick={() => navigate(`/movies/${movie.id}`)}
+                style={{
+                  marginTop: 10,
+                  padding: "0 4px",
+                  cursor: "pointer",
+                }}
+              >
+                <h4
+                  style={{
+                    margin: 0,
+                    fontSize: 15,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {movie.title}
+                </h4>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 };
 
-const styles = {
-  container: {
-    padding: "40px",
-    backgroundColor: "#121212",
-    minHeight: "100vh",
-    color: "white",
-    fontFamily: "Arial, sans-serif",
-  },
-  title: {
-    fontSize: "36px",
-    marginBottom: "30px",
-    textAlign: "center",
-  },
-  searchBar: {
-    display: "flex",
-    justifyContent: "center",
-    marginBottom: "20px",
-  },
-  input: {
-    width: "50%",
-    padding: "10px 15px",
-    borderRadius: "5px",
-    border: "none",
-    outline: "none",
-    fontSize: "16px",
-    color: "#333",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-    gap: "20px",
-  },
-  card: {
-    position: "relative",
-    borderRadius: "10px",
-    overflow: "hidden",
-    cursor: "pointer",
-    transition: "transform 0.3s, box-shadow 0.3s",
-  },
-  poster: {
-    width: "100%",
-    height: "270px",
-    objectFit: "cover",
-    display: "block",
-  },
-  noPoster: {
-    width: "100%",
-    height: "270px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#333",
-    color: "#aaa",
-    fontSize: "14px",
-  },
-  overlay: {
-    position: "absolute",
-    bottom: "0",
-    width: "100%",
-    background: "rgba(0,0,0,0.7)",
-    color: "#fff",
-    padding: "10px",
-    textAlign: "center",
-    opacity: "0",
-    transition: "opacity 0.3s",
-  },
-  movieTitle: {
-    fontSize: "14px",
-    fontWeight: "bold",
-    margin: "5px 0",
-  },
-  meta: {
-    fontSize: "12px",
-    color: "#ccc",
-    marginBottom: "8px",
-  },
-  removeButton: {
-    padding: "5px 10px",
-    backgroundColor: "#e50914",
-    border: "none",
-    color: "white",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontSize: "12px",
-  },
+const overlayBtn = {
+  background: "rgba(255,255,255,0.08)",
+  border: "none",
+  borderRadius: 8,
+  padding: "8px",
+  color: "white",
+  cursor: "pointer",
+  fontSize: 13,
 };
-
-// Inject hover CSS
-const styleSheet = `
-  .overlay:hover {
-    opacity: 1 !important;
-  }
-  div[style*='position: relative']:hover {
-    transform: scale(1.05) !important;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.7) !important;
-  }
-`;
-document.head.appendChild(Object.assign(document.createElement("style"), { textContent: styleSheet }));
 
 export default WatchlistPage;

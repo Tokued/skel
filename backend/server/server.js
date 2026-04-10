@@ -52,6 +52,9 @@ app.use("/user-movie", require("./routes/userMovieGetAll.js"));
 app.use("/watchlist", require("./routes/watchlistAdd.js"));
 app.use("/watchlist", require("./routes/watchlistDelete.js"));
 app.use("/watchlist", require("./routes/watchlistGetAll.js"));
+app.use("/watchlist", require("./routes/watchlistRate.js"));
+app.use("/watchlist", require("./routes/watchlistWatched.js"));
+app.use("/watchlist", require("./routes/watchlistFavorite.js"));
 
 // ---------------- MOVIE ROUTES -------------------
 app.use("/movies", movieRoutes);

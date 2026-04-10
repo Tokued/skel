@@ -16,6 +16,20 @@ const watchlistSchema = new mongoose.Schema({
     addedAt: {
         type: Date,
         default: Date.now
+    },
+    favorite: {
+        type: Boolean,
+        default: false
+    },
+    watched: {
+        type: Boolean,
+        default: false
+    },
+    rating: {
+        type: Number,
+        min: 1,
+        max: 5,
+        default: null
     }
 });
 
