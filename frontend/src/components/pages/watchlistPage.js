@@ -12,6 +12,10 @@ const WatchlistPage = () => {
   const [user, setUser] = useState(null);
   const [hovered, setHovered] = useState(null);
 
+  // ✅ FILTER STATE
+  const [statusFilter, setStatusFilter] = useState("all"); // all | watched | unwatched | favorites
+  const [ratingFilter, setRatingFilter] = useState("all"); // all | 1-5
+
   const navigate = useNavigate();
   const userId = user?.id;
 
@@ -52,7 +56,6 @@ const WatchlistPage = () => {
     updateState(id, res.data);
   };
 
-  // ⭐ 5-star rating system
   const setRating = async (id, rating) => {
     const numeric = Number(rating);
     if (numeric < 1 || numeric > 5) return;
@@ -78,9 +81,31 @@ const WatchlistPage = () => {
     setWatchlist((prev) => prev.filter((m) => m.movieId !== id));
   };
 
-  const filteredMovies = movies.filter((movie) =>
-    movie.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // ✅ FILTER LOGIC
+  const filteredMovies = movies.filter((movie) => {
+    const item = getItem(movie.id);
+
+    // search
+    const matchesSearch = movie.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    // status filter
+    if (statusFilter === "watched" && !item?.watched) return false;
+    if (statusFilter === "unwatched" && item?.watched) return false;
+    if (statusFilter === "favorites" && !item?.favorite) return false;
+
+    // rating filter
+    if (ratingFilter !== "all") {
+      const rating = Number(item?.rating);
+      const target = Number(ratingFilter);
+      if (!rating || rating !== target) return false;
+    }
+
+    return true;
+  });
 
   if (!userId) return <h3>Login required</h3>;
 
@@ -88,22 +113,60 @@ const WatchlistPage = () => {
     <div style={{ padding: 40, background: "#0b0b0b", color: "white", minHeight: "100vh" }}>
       <h1 style={{ marginBottom: 25 }}>My Watchlist</h1>
 
-      <input
-        placeholder="Search movies..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        style={{
-          marginBottom: 35,
-          padding: 14,
-          width: "100%",
-          borderRadius: 10,
-          border: "1px solid #222",
-          background: "#1a1a1a",
-          color: "#aaa",
-          outline: "none",
-          fontSize: 15,
-        }}
-      />
+      {/* SEARCH + FILTER BAR */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 35 }}>
+        <input
+          placeholder="Search movies..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{
+            flex: 1,
+            padding: 14,
+            borderRadius: 10,
+            border: "1px solid #222",
+            background: "#1a1a1a",
+            color: "#aaa",
+            outline: "none",
+            fontSize: 15,
+          }}
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={{
+            padding: 14,
+            borderRadius: 10,
+            background: "#1a1a1a",
+            color: "#aaa",
+            border: "1px solid #222",
+          }}
+        >
+          <option value="all">All</option>
+          <option value="watched">Watched</option>
+          <option value="unwatched">Unwatched</option>
+          <option value="favorites">Favorites</option>
+        </select>
+
+        <select
+          value={ratingFilter}
+          onChange={(e) => setRatingFilter(e.target.value)}
+          style={{
+            padding: 14,
+            borderRadius: 10,
+            background: "#1a1a1a",
+            color: "#aaa",
+            border: "1px solid #222",
+          }}
+        >
+          <option value="all">Any Rating</option>
+          <option value="5">5 Stars</option>
+          <option value="4">4 Stars</option>
+          <option value="3">3 Stars</option>
+          <option value="2">2 Stars</option>
+          <option value="1">1 Star</option>
+        </select>
+      </div>
 
       <div
         style={{
@@ -134,7 +197,6 @@ const WatchlistPage = () => {
                   transition: "all 0.25s ease",
                 }}
               >
-                {/* Poster */}
                 <div style={{ width: "100%", aspectRatio: "2/3", position: "relative" }}>
                   <img
                     src={movie.poster}
@@ -189,18 +251,15 @@ const WatchlistPage = () => {
                         {item?.watched ? "Unwatch" : "Mark Watched"}
                       </button>
 
-                      {/* 5-star rating */}
                       {item?.watched && (
                         <select
                           value={item?.rating || ""}
                           onChange={(e) => setRating(movie.id, e.target.value)}
                           style={overlayBtn}
                         >
-                          <option value="">Rate (1-5)</option>
+                          <option value="">Rate</option>
                           {[1, 2, 3, 4, 5].map((r) => (
-                            <option key={r} value={r}>
-                              {r} ⭐
-                            </option>
+                            <option key={r} value={r}>{r} ⭐</option>
                           ))}
                         </select>
                       )}
@@ -216,22 +275,12 @@ const WatchlistPage = () => {
                 </div>
               </div>
 
-              {/* Title + Rating */}
+              {/* Title + Rating Display */}
               <div
                 onClick={() => navigate(`/movies/${movie.id}`)}
                 style={{ marginTop: 10, padding: "0 4px", cursor: "pointer" }}
               >
-                <h4
-                  style={{
-                    margin: 0,
-                    fontSize: 15,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {movie.title}
-                </h4>
+                <h4 style={{ margin: 0 }}>{movie.title}</h4>
 
                 {item?.rating && (
                   <div style={{ fontSize: 13, color: "#aaa", marginTop: 4 }}>

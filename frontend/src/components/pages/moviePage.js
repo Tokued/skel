@@ -8,11 +8,12 @@ const MoviePage = () => {
   const { id } = useParams();
   const [movie, setMovie] = useState(null);
   const [user, setUser] = useState(null);
-  const [isAdded, setIsAdded] = useState(false);
 
   const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
+
+  const [watchlist, setWatchlist] = useState([]);
 
   // ✨ EDIT MODAL STATE
   const [editingReview, setEditingReview] = useState(null);
@@ -38,6 +39,27 @@ const MoviePage = () => {
     fetchMovie();
   }, [id]);
 
+   useEffect(() => {
+  const fetchWatchlist = async () => {
+    if (!userId) return;
+
+    try {
+      const res = await axios.get(
+        `http://localhost:8081/watchlist/${userId}`
+      );
+
+      setWatchlist(res.data);
+    } catch (err) {
+      console.error("Watchlist fetch error:", err);
+    }
+  };
+
+  if (userId) fetchWatchlist();
+}, [userId, id]); // 👈 IMPORTANT FIX
+
+  // ✅ derived state (THIS FIXES YOUR BUG)
+  const isAdded = watchlist.some((m) => m.movieId === id);
+
   const fetchReviews = useCallback(async () => {
     try {
       const res = await axios.get(
@@ -54,26 +76,43 @@ const MoviePage = () => {
   }, [fetchReviews]);
 
   const toggleWatchlist = async () => {
-    if (!userId) return alert("You must be logged in");
+  if (!userId) return alert("You must be logged in");
+  if (!movie) return;
 
-    try {
-      if (isAdded) {
-        await axios.delete(
-          `http://localhost:8081/watchlist/${userId}/${id}`
-        );
-        setIsAdded(false);
-      } else {
-        await axios.post("http://localhost:8081/watchlist/add", {
-          userId,
-          movieId: movie.id,
-          title: movie.title,
-        });
-        setIsAdded(true);
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || "Error updating watchlist");
+  try {
+    // optimistic UI update FIRST (instant toggle)
+    if (isAdded) {
+      setWatchlist((prev) =>
+        prev.filter((m) => m.movieId !== id)
+      );
+
+      await axios.delete(
+        `http://localhost:8081/watchlist/${userId}/${id}`
+      );
+    } else {
+      const newItem = {
+        userId,
+        movieId: movie.id,
+        title: movie.title,
+      };
+
+      setWatchlist((prev) => [...prev, newItem]);
+
+      await axios.post(
+        "http://localhost:8081/watchlist/add",
+        newItem
+      );
     }
-  };
+  } catch (err) {
+    alert(err.response?.data?.message || "Watchlist error");
+
+    // 🔥 rollback if error happens
+    const res = await axios.get(
+      `http://localhost:8081/watchlist/${userId}`
+    );
+    setWatchlist(res.data);
+  }
+};
 
   // ⭐ STAR CLICK HANDLER
   const StarSelector = ({ value, setValue }) => {
@@ -180,9 +219,13 @@ const MoviePage = () => {
     <div className="flex justify-center">
       <button
         onClick={toggleWatchlist}
-        className="mt-6 px-6 py-3 bg-red-600 rounded text-lg hover:bg-red-800 hover:scale-105 transition duration-200"
->
-        {isAdded ? "Added" : "Add to Watchlist"}
+       className={`mt-6 px-6 py-3 rounded text-lg transition duration-200 ${
+                isAdded
+                  ? "bg-green-600 hover:bg-green-700"
+                  : "bg-red-600 hover:bg-red-800"
+              }`}
+            >
+        {isAdded ? "Added ✓" : "Add to Watchlist"}
       </button>
     </div>
   </div>
