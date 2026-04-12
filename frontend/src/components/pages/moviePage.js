@@ -5,6 +5,8 @@ import getUserInfo from "../../utilities/decodeJwt";
 import MovieTrailer from "../MovieTrailer";
 
 const MoviePage = () => {
+  const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
+  const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
   const { id } = useParams();
   const [movie, setMovie] = useState(null);
   const [user, setUser] = useState(null);
@@ -27,17 +29,66 @@ const MoviePage = () => {
   }, []);
 
   useEffect(() => {
-    const fetchMovie = async () => {
-      try {
-        const res = await axios.get(`http://localhost:8081/movies/${id}`);
-        setMovie(res.data);
-      } catch (err) {
-        console.error("Error fetching movie:", err);
-      }
-    };
+  const fetchMovie = async () => {
+    try {
+      // 1. Get your normal movie data first
+      const res = await axios.get(`http://localhost:8081/movies/${id}`);
+      const baseMovie = res.data;
 
-    fetchMovie();
-  }, [id]);
+      // make sure the original page still gets something immediately
+      let mergedMovie = { ...baseMovie };
+
+      const missingPoster =
+        !baseMovie?.poster || baseMovie.poster === "N/A";
+      const missingPlot =
+        !baseMovie?.plot || baseMovie.plot === "N/A";
+
+      // 2. Only do TMDb fallback if poster or plot is missing
+      if (missingPoster || missingPlot) {
+        try {
+          // find TMDb movie by IMDb id
+          const findRes = await axios.get(
+            `https://api.themoviedb.org/3/find/${id}?api_key=${TMDB_API_KEY}&external_source=imdb_id`
+          );
+
+          const tmdbMovie = findRes.data?.movie_results?.[0];
+
+          if (tmdbMovie) {
+            const detailsRes = await axios.get(
+              `https://api.themoviedb.org/3/movie/${tmdbMovie.id}?api_key=${TMDB_API_KEY}`
+            );
+
+            const tmdbDetails = detailsRes.data;
+
+            mergedMovie = {
+              ...baseMovie,
+              // keep existing values if they are good
+              title: baseMovie?.title || tmdbDetails?.title || "N/A",
+              poster:
+                !missingPoster
+                  ? baseMovie.poster
+                  : tmdbDetails?.poster_path
+                  ? `${TMDB_IMAGE_BASE}${tmdbDetails.poster_path}`
+                  : baseMovie.poster,
+              plot:
+                !missingPlot
+                  ? baseMovie.plot
+                  : tmdbDetails?.overview || "No description available.",
+            };
+          }
+        } catch (fallbackErr) {
+          console.error("TMDb fallback error:", fallbackErr);
+        }
+      }
+
+      setMovie(mergedMovie);
+    } catch (err) {
+      console.error("Error fetching movie:", err);
+    }
+  };
+
+  fetchMovie();
+}, [id]);
 
    useEffect(() => {
   const fetchWatchlist = async () => {
@@ -201,11 +252,17 @@ const MoviePage = () => {
 
         <div className="flex gap-8 items-stretch flex-wrap lg:flex-nowrap">
           <div className="w-64 flex-shrink-0">
-            <img
-            src={movie.poster}
-            alt={movie.title}
-            className="w-64 h-[384px] object-cover rounded-lg"
-          />
+            {movie.poster ? (
+              <img
+                src={movie.poster}
+                alt={movie.title}
+                className="w-64 h-[384px] object-cover rounded-lg"
+              />
+            ) : (
+              <div className="w-64 h-[384px] bg-gray-800 rounded-lg flex items-center justify-center text-gray-400">
+                No Image
+              </div>
+            )}
         </div>
 
     <div className="flex-1 min-w-[300px] rounded-xl overflow-hidden border border-gray-700 shadow-2xl shadow-black/60 bg-black">

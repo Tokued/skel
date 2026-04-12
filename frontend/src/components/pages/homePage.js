@@ -4,105 +4,133 @@ import { useNavigate } from "react-router-dom";
 import logo from "../../assets/vmdb-logo.png";
 import TrailerRow from "../TrailerRow";
 
-const topMoviesSeed = [
-  { id: "tt15398776", title: "Oppenheimer", year: "2023" },
-  { id: "tt1517268", title: "Barbie", year: "2023" },
-  { id: "tt9362722", title: "Spider-Man: Across the Spider-Verse", year: "2023" },
-  { id: "tt0816692", title: "Interstellar", year: "2014" },
-  { id: "tt0468569", title: "The Dark Knight", year: "2008" },
-];
+const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 
 const HomePage = () => {
-  const [topMovies, setTopMovies] = useState(topMoviesSeed);
+  const [topMovies, setTopMovies] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchTopMoviePosters = async () => {
+    const fetchTrendingMovies = async () => {
       try {
-        const results = await Promise.all(
-          topMoviesSeed.map(async (movie) => {
+        const trendingRes = await axios.get(
+          `https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_API_KEY}`
+        );
+
+        const movies = trendingRes.data?.results?.slice(0, 10) || [];
+
+        const mappedMovies = await Promise.all(
+          movies.map(async (movie) => {
             try {
-              const res = await axios.get(
-                `https://www.omdbapi.com/?apikey=1d0ab4bc&i=${movie.id}`
+              const externalIdsRes = await axios.get(
+                `https://api.themoviedb.org/3/movie/${movie.id}/external_ids?api_key=${TMDB_API_KEY}`
               );
 
+              const imdbID = externalIdsRes.data?.imdb_id;
+
               return {
-                ...movie,
-                poster:
-                  res.data && res.data.Poster && res.data.Poster !== "N/A"
-                    ? res.data.Poster
-                    : null,
+                id: imdbID || `tmdb-${movie.id}`,
+                tmdbId: movie.id,
+                title: movie.title,
+                year: movie.release_date
+                  ? movie.release_date.slice(0, 4)
+                  : "N/A",
+                poster: movie.poster_path
+                  ? `${TMDB_IMAGE_BASE}${movie.poster_path}`
+                  : null,
+                hasOmdbRoute: !!imdbID,
               };
             } catch {
-              return { ...movie, poster: null };
+              return {
+                id: `tmdb-${movie.id}`,
+                tmdbId: movie.id,
+                title: movie.title,
+                year: movie.release_date
+                  ? movie.release_date.slice(0, 4)
+                  : "N/A",
+                poster: movie.poster_path
+                  ? `${TMDB_IMAGE_BASE}${movie.poster_path}`
+                  : null,
+                hasOmdbRoute: false,
+              };
             }
           })
         );
 
-        setTopMovies(results);
+        setTopMovies(mappedMovies);
       } catch (err) {
-        console.error("Error loading top movie posters:", err);
+        console.error("Error loading trending movies:", err);
       }
     };
 
-    fetchTopMoviePosters();
+    fetchTrendingMovies();
   }, []);
 
+  const handleMovieClick = (movie) => {
+    if (movie.hasOmdbRoute) {
+      navigate(`/movies/${movie.id}`);
+    } else {
+      console.warn("No IMDb ID found for this TMDb movie yet.");
+    }
+  };
+
   return (
-  <div style={styles.container}>
-    <div style={styles.hero}>
-      <img src={logo} alt="VMDB logo" style={styles.logo} />
-      <p style={styles.subtitle}>
-        Search movies, explore titles, and manage your watchlist all in one place.
-      </p>
-    </div>
-
-    <div style={styles.topMoviesSection}>
-      <h2 style={styles.sectionTitle}>Top Picks</h2>
-      <p style={styles.topMoviesSubtitle}>Popular movies to get you started</p>
-
-      <div style={styles.scrollRow}>
-        {topMovies.map((movie) => (
-          <div
-            key={movie.id}
-            style={styles.topMovieCard}
-            onClick={() => navigate(`/movies/${movie.id}`)}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "scale(1.05)";
-              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.4)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          >
-            {movie.poster ? (
-              <img
-                src={movie.poster}
-                alt={movie.title}
-                style={styles.topMoviePoster}
-                onError={(e) => {
-                  e.target.style.display = "none";
-                }}
-              />
-            ) : (
-              <div style={styles.noTopPoster}>No Image</div>
-            )}
-
-            <div style={styles.cardContent}>
-              <h4 style={styles.movieTitle}>{movie.title}</h4>
-              <p style={styles.year}>{movie.year}</p>
-            </div>
-          </div>
-        ))}
+    <div style={styles.container}>
+      <div style={styles.hero}>
+        <img src={logo} alt="VMDB logo" style={styles.logo} />
+        <p style={styles.subtitle}>
+          Search movies, explore titles, and manage your watchlist all in one
+          place.
+        </p>
       </div>
+
+      <div style={styles.topMoviesSection}>
+        <h2 style={styles.sectionTitle}>Trending Now</h2>
+        <p style={styles.topMoviesSubtitle}>
+          Updated from TMDb trending movies
+        </p>
+
+        <div style={styles.scrollRow}>
+          {topMovies.map((movie) => (
+            <div
+              key={movie.id}
+              style={styles.topMovieCard}
+              onClick={() => handleMovieClick(movie)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              {movie.poster ? (
+                <img
+                  src={movie.poster}
+                  alt={movie.title}
+                  style={styles.topMoviePoster}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              ) : (
+                <div style={styles.noTopPoster}>No Image</div>
+              )}
+
+              <div style={styles.cardContent}>
+                <h4 style={styles.movieTitle}>{movie.title}</h4>
+                <p style={styles.year}>{movie.year}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <TrailerRow />
     </div>
-
-    {/* 👇 ADD THIS RIGHT HERE */}
-    <TrailerRow />
-
-  </div>
-);
+  );
 };
 
 const styles = {
