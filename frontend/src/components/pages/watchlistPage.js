@@ -12,9 +12,13 @@ const WatchlistPage = () => {
   const [user, setUser] = useState(null);
   const [hovered, setHovered] = useState(null);
 
-  // ✅ FILTER STATE
-  const [statusFilter, setStatusFilter] = useState("all"); // all | watched | unwatched | favorites
-  const [ratingFilter, setRatingFilter] = useState("all"); // all | 1-5
+  // filters
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [ratingFilter, setRatingFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("none");
+
+  // ✅ NEW dropdown toggle
+  const [showFilters, setShowFilters] = useState(false);
 
   const navigate = useNavigate();
   const userId = user?.id;
@@ -31,7 +35,9 @@ const WatchlistPage = () => {
       setWatchlist(res.data);
 
       const movieDetails = await Promise.all(
-        res.data.map((m) => axios.get(`http://localhost:8081/movies/${m.movieId}`))
+        res.data.map((m) =>
+          axios.get(`http://localhost:8081/movies/${m.movieId}`)
+        )
       );
 
       setMovies(movieDetails.map((r) => r.data));
@@ -81,23 +87,20 @@ const WatchlistPage = () => {
     setWatchlist((prev) => prev.filter((m) => m.movieId !== id));
   };
 
-  // ✅ FILTER LOGIC
-  const filteredMovies = movies.filter((movie) => {
+  // filter
+  let filteredMovies = movies.filter((movie) => {
     const item = getItem(movie.id);
 
-    // search
     const matchesSearch = movie.title
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
 
-    // status filter
     if (statusFilter === "watched" && !item?.watched) return false;
     if (statusFilter === "unwatched" && item?.watched) return false;
     if (statusFilter === "favorites" && !item?.favorite) return false;
 
-    // rating filter
     if (ratingFilter !== "all") {
       const rating = Number(item?.rating);
       const target = Number(ratingFilter);
@@ -107,81 +110,81 @@ const WatchlistPage = () => {
     return true;
   });
 
+  // sort
+  if (sortOrder === "newest") {
+    filteredMovies.sort(
+      (a, b) =>
+        new Date(getItem(b.id)?.addedAt) -
+        new Date(getItem(a.id)?.addedAt)
+    );
+  } else if (sortOrder === "oldest") {
+    filteredMovies.sort(
+      (a, b) =>
+        new Date(getItem(a.id)?.addedAt) -
+        new Date(getItem(b.id)?.addedAt)
+    );
+  }
+
   if (!userId) return <h3>Login required</h3>;
 
   return (
     <div style={{ padding: 40, background: "#0b0b0b", color: "white", minHeight: "100vh" }}>
       <h1 style={{ marginBottom: 25 }}>My Watchlist</h1>
 
-      {/* SEARCH + FILTER BAR */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 35 }}>
+      {/* SEARCH + FILTER BUTTON */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 35, position: "relative" }}>
         <input
           placeholder="Search movies..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            flex: 1,
-            padding: 14,
-            borderRadius: 10,
-            border: "1px solid #222",
-            background: "#1a1a1a",
-            color: "#aaa",
-            outline: "none",
-            fontSize: 15,
-          }}
+          style={searchStyle}
         />
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          style={{
-            padding: 14,
-            borderRadius: 10,
-            background: "#1a1a1a",
-            color: "#aaa",
-            border: "1px solid #222",
-          }}
+        {/* ✅ FILTER BUTTON */}
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          style={filterBtn}
         >
-          <option value="all">All</option>
-          <option value="watched">Watched</option>
-          <option value="unwatched">Unwatched</option>
-          <option value="favorites">Favorites</option>
-        </select>
+          ☰ Filters
+        </button>
 
-        <select
-          value={ratingFilter}
-          onChange={(e) => setRatingFilter(e.target.value)}
-          style={{
-            padding: 14,
-            borderRadius: 10,
-            background: "#1a1a1a",
-            color: "#aaa",
-            border: "1px solid #222",
-          }}
-        >
-          <option value="all">Any Rating</option>
-          <option value="5">5 Stars</option>
-          <option value="4">4 Stars</option>
-          <option value="3">3 Stars</option>
-          <option value="2">2 Stars</option>
-          <option value="1">1 Star</option>
-        </select>
+        {/* ✅ DROPDOWN PANEL */}
+        {showFilters && (
+          <div style={dropdownStyle}>
+            <label>Status</label>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={selectStyle}>
+              <option value="all">All</option>
+              <option value="watched">Watched</option>
+              <option value="unwatched">Unwatched</option>
+              <option value="favorites">Favorites</option>
+            </select>
+
+            <label>Rating</label>
+            <select value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)} style={selectStyle}>
+              <option value="all">Any</option>
+              {[5,4,3,2,1].map(r => (
+                <option key={r} value={r}>{r} Stars</option>
+              ))}
+            </select>
+
+            <label>Sort</label>
+            <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} style={selectStyle}>
+              <option value="none">None</option>
+              <option value="newest">Recently Added</option>
+              <option value="oldest">Oldest Added</option>
+            </select>
+          </div>
+        )}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-          gap: 30,
-        }}
-      >
+      {/* MOVIES GRID */}
+      <div style={gridStyle}>
         {filteredMovies.map((movie) => {
           const item = getItem(movie.id);
           const isHovered = hovered === movie.id;
 
           return (
             <div key={movie.id}>
-              {/* CARD */}
               <div
                 onMouseEnter={() => setHovered(movie.id)}
                 onMouseLeave={() => setHovered(null)}
@@ -197,93 +200,24 @@ const WatchlistPage = () => {
                   transition: "all 0.25s ease",
                 }}
               >
-                <div style={{ width: "100%", aspectRatio: "2/3", position: "relative" }}>
-                  <img
-                    src={movie.poster}
-                    onClick={() => navigate(`/movies/${movie.id}`)}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      cursor: "pointer",
-                      display: "block",
-                    }}
-                  />
-
-                  {/* Favorite */}
-                  {item?.watched && (
-                    <button
-                      onClick={() => toggleFavorite(movie.id)}
-                      style={{
-                        position: "absolute",
-                        top: 12,
-                        right: 12,
-                        background: "rgba(0,0,0,0.7)",
-                        border: "none",
-                        borderRadius: "50%",
-                        width: 36,
-                        height: 36,
-                        color: item?.favorite ? "#ff4d6d" : "white",
-                        cursor: "pointer",
-                        fontSize: 16,
-                      }}
-                    >
-                      {item?.favorite ? "❤" : "♡"}
-                    </button>
-                  )}
-
-                  {/* Overlay */}
-                  {isHovered && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        background: "rgba(0,0,0,0.85)",
-                        padding: 12,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
-                      }}
-                    >
-                      <button onClick={() => toggleWatched(movie.id)} style={overlayBtn}>
-                        {item?.watched ? "Unwatch" : "Mark Watched"}
-                      </button>
-
-                      {item?.watched && (
-                        <select
-                          value={item?.rating || ""}
-                          onChange={(e) => setRating(movie.id, e.target.value)}
-                          style={overlayBtn}
-                        >
-                          <option value="">Rate</option>
-                          {[1, 2, 3, 4, 5].map((r) => (
-                            <option key={r} value={r}>{r} ⭐</option>
-                          ))}
-                        </select>
-                      )}
-
-                      <button
-                        onClick={() => removeMovie(movie.id)}
-                        style={{ ...overlayBtn, color: "#ff4d4d" }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <img
+                  src={movie.poster}
+                  onClick={() => navigate(`/movies/${movie.id}`)}
+                  style={posterStyle}
+                />
               </div>
 
-              {/* Title + Rating Display */}
-              <div
-                onClick={() => navigate(`/movies/${movie.id}`)}
-                style={{ marginTop: 10, padding: "0 4px", cursor: "pointer" }}
-              >
+              <div onClick={() => navigate(`/movies/${movie.id}`)} style={{ marginTop: 10, cursor: "pointer" }}>
                 <h4 style={{ margin: 0 }}>{movie.title}</h4>
 
+                {item?.addedAt && (
+                  <div style={{ fontSize: 12, color: "#777" }}>
+                    Added: {new Date(item.addedAt).toLocaleDateString()}
+                  </div>
+                )}
+
                 {item?.rating && (
-                  <div style={{ fontSize: 13, color: "#aaa", marginTop: 4 }}>
+                  <div style={{ fontSize: 13, color: "#aaa" }}>
                     Rated: {item.rating}/5 ⭐
                   </div>
                 )}
@@ -296,14 +230,59 @@ const WatchlistPage = () => {
   );
 };
 
-const overlayBtn = {
-  background: "rgba(255,255,255,0.08)",
-  border: "none",
-  borderRadius: 8,
-  padding: "8px",
+// styles
+const searchStyle = {
+  flex: 1,
+  padding: 14,
+  borderRadius: 10,
+  border: "1px solid #222",
+  background: "#1a1a1a",
+  color: "#aaa",
+};
+
+const filterBtn = {
+  padding: "12px 16px",
+  borderRadius: 10,
+  background: "#1a1a1a",
   color: "white",
+  border: "1px solid #222",
   cursor: "pointer",
-  fontSize: 13,
+};
+
+const dropdownStyle = {
+  position: "absolute",
+  top: 60,
+  right: 0,
+  background: "#141414",
+  padding: 15,
+  borderRadius: 12,
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+  width: 200,
+  boxShadow: "0 10px 25px rgba(0,0,0,0.8)",
+  zIndex: 10,
+};
+
+const selectStyle = {
+  padding: 8,
+  borderRadius: 6,
+  background: "#1a1a1a",
+  color: "#aaa",
+  border: "1px solid #222",
+};
+
+const gridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+  gap: 30,
+};
+
+const posterStyle = {
+  width: "100%",
+  aspectRatio: "2/3",
+  objectFit: "cover",
+  cursor: "pointer",
 };
 
 export default WatchlistPage;
