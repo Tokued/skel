@@ -217,3 +217,17 @@
 .vmdb-search-input {
   margin-left: 6px !important;
 }
+.vmdb-search-input::placeholder {
+  color: #aaa; 
+}
+
+.vmdb-search-input.error::placeholder {
+  color: #ff6b6b;
+}
+.vmdb-search-input.error {
+  color: #ff6b6b !important;
+}
+
+.vmdb-search-input.error::placeholder {
+  color: #ff6b6b !important;
+}

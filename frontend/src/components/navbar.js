@@ -16,6 +16,7 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searchError, setSearchError] = useState("");
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedGenre, setSelectedGenre] = useState("");
@@ -33,56 +34,54 @@ export default function Navbar() {
     years.push(String(y));
   }
 
-  // 🔍 SEARCH FUNCTION
   const searchMovies = async () => {
-    if (!searchQuery.trim()) {
+    const trimmed = searchQuery.trim();
+
+    if (!trimmed) {
       setSearchResults([]);
       setShowDropdown(false);
       return [];
     }
 
     try {
-      const res = await axios.get(
-        `https://www.omdbapi.com/?apikey=1d0ab4bc&s=${encodeURIComponent(searchQuery)}`
-      );
+      const res = await axios.get("https://www.omdbapi.com/", {
+        params: {
+          apikey: "1d0ab4bc",
+          s: trimmed,
+        },
+      });
 
-      if (res.data.Search) {
-        let formatted = res.data.Search
-          .filter((movie) => movie.Type === "movie" || movie.Type === "series")
-          .map((movie) => ({
-            id: movie.imdbID,
-            title: movie.Title,
-            year: movie.Year,
-            poster: movie.Poster,
-            type: movie.Type,
-          }));
-
-        if (selectedCategory === "Movies") {
-          formatted = formatted.filter((m) => m.type === "movie");
-        } else if (selectedCategory === "Series") {
-          formatted = formatted.filter((m) => m.type === "series");
-        }
-
-        setSearchResults(formatted);
-        setShowDropdown(true);
-        return formatted;
-      } else {
+      if (res.data.Response === "False" || !res.data.Search) {
         setSearchResults([]);
         setShowDropdown(false);
         return [];
       }
+
+      const formatted = res.data.Search
+        .filter((movie) => movie.Type === "movie" || movie.Type === "series")
+        .map((movie) => ({
+          id: movie.imdbID,
+          title: movie.Title,
+          year: movie.Year,
+          poster: movie.Poster,
+          type: movie.Type,
+        }));
+
+      setSearchResults(formatted);
+      setShowDropdown(true);
+      return formatted;
     } catch (err) {
-      console.error("Search error:", err);
+      console.error("Navbar OMDb search error:", err);
       setSearchResults([]);
       setShowDropdown(false);
       return [];
     }
   };
 
-  // 🔁 LIVE SEARCH
   useEffect(() => {
     const delay = setTimeout(() => {
       if (searchQuery.trim()) {
+        setSearchError("");
         searchMovies();
       } else {
         setSearchResults([]);
@@ -91,9 +90,8 @@ export default function Navbar() {
     }, 300);
 
     return () => clearTimeout(delay);
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery]);
 
-  // 🖱 CLICK OUTSIDE
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -105,44 +103,63 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🔘 SUBMIT SEARCH
-  const handleSearchSubmit = async (e) => {
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
+
+    const trimmedQuery = searchQuery.trim();
+
+    if (!trimmedQuery) {
+      setSearchError("Type a movie or show title in the search bar.");
+      return;
+    }
+
+    setSearchError("");
+    setShowDropdown(false);
+    navigate(`/search?query=${encodeURIComponent(trimmedQuery)}`);
+  };
+
+  const handleApplyFilters = () => {
+    setShowDropdown(false);
+    const isAllSelected =
+      selectedCategory === "All" &&
+      !selectedYear &&
+      !selectedGenre;
+
+    if (isAllSelected) {
+      setSearchError("Choose at least one filter.");
+      setShowDropdown(false);
+      return;
+    }
+
+    setSearchError("");
+    setShowDropdown(false);
 
     const params = new URLSearchParams();
 
-    if (searchQuery.trim()) {
-      params.set("query", searchQuery.trim());
-    }
-
     if (selectedCategory && selectedCategory !== "All") {
       params.set("category", selectedCategory);
-    }
-
-    if (selectedGenre) {
-      params.set("genre", selectedGenre);
     }
 
     if (selectedYear) {
       params.set("year", selectedYear);
     }
 
-    if ([...params.keys()].length === 0) return;
+    if (selectedGenre) {
+      params.set("genre", selectedGenre);
+    }
 
-    setShowDropdown(false);
     navigate(`/search?${params.toString()}`);
   };
 
-  // 🎬 CLICK MOVIE
   const handleMovieClick = (movieId) => {
     setShowDropdown(false);
+    setSearchError("");
     navigate(`/movies/${movieId}`);
   };
 
   return (
     <ReactNavbar bg="dark" variant="dark" expand="lg" className="vmdb-navbar">
       <Container fluid className="vmdb-navbar-container">
-        {/* LEFT */}
         <div className="vmdb-navbar-left">
           <Link to="/home" className="vmdb-logo-link">
             <img src={logo} alt="VMDB logo" className="vmdb-logo" />
@@ -168,7 +185,6 @@ export default function Navbar() {
           </NavDropdown>
         </div>
 
-        {/* CENTER SEARCH */}
         <div className="vmdb-navbar-center" ref={searchRef}>
           <Form className="vmdb-search-form" onSubmit={handleSearchSubmit}>
             <InputGroup>
@@ -183,7 +199,10 @@ export default function Navbar() {
                     <div style={styles.filterLabel}>Type</div>
                     <Form.Select
                       value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value);
+                        setSearchError("");
+                      }}
                       style={styles.select}
                     >
                       <option value="All">All</option>
@@ -196,7 +215,10 @@ export default function Navbar() {
                     <div style={styles.filterLabel}>Released</div>
                     <Form.Select
                       value={selectedYear}
-                      onChange={(e) => setSelectedYear(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedYear(e.target.value);
+                        setSearchError("");
+                      }}
                       style={styles.select}
                     >
                       <option value="">All Years</option>
@@ -212,7 +234,10 @@ export default function Navbar() {
                     <div style={styles.filterLabel}>Genre</div>
                     <Form.Select
                       value={selectedGenre}
-                      onChange={(e) => setSelectedGenre(e.target.value)}
+                      onChange={(e) => {
+                        setSelectedGenre(e.target.value);
+                        setSearchError("");
+                      }}
                       style={styles.select}
                     >
                       <option value="">All Genres</option>
@@ -237,20 +262,27 @@ export default function Navbar() {
                       <option value="Western">Western</option>
                     </Form.Select>
                   </div>
+
+                  <Button
+                    variant="light"
+                    size="sm"
+                    onClick={handleApplyFilters}
+                    style={styles.applyButton}
+                  >
+                    ✓ Apply Filters
+                  </Button>
                 </div>
               </NavDropdown>
 
               <Form.Control
                 type="text"
-                placeholder="Search VMDB"
+                placeholder={searchError || "Search VMDB"}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => {
-                  if (searchQuery.trim() && searchResults.length > 0) {
-                    setShowDropdown(true);
-                  }
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchError("");
                 }}
-                className="vmdb-search-input"
+                className={`vmdb-search-input ${searchError ? "error" : ""}`}
               />
 
               <Button type="submit" variant="light" className="vmdb-search-button">
@@ -259,7 +291,6 @@ export default function Navbar() {
             </InputGroup>
           </Form>
 
-          {/* DROPDOWN */}
           {showDropdown && searchResults.length > 0 && (
             <div className="vmdb-suggestions-dropdown">
               {searchResults.slice(0, 6).map((movie) => (
@@ -317,5 +348,8 @@ const styles = {
     color: "white",
     border: "1px solid #333",
   },
-  
+  applyButton: {
+    width: "100%",
+    marginTop: "8px",
+  },
 };

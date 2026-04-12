@@ -11,7 +11,7 @@ const SearchResultsPage = () => {
   const navigate = useNavigate();
 
   const params = new URLSearchParams(location.search);
-  const query = params.get("query") || "";
+  const searchText = params.get("query") || "";
   const category = params.get("category") || "All";
   const genre = params.get("genre") || "";
   const year = params.get("year") || "";
@@ -27,7 +27,7 @@ const SearchResultsPage = () => {
 
   useEffect(() => {
     const fetchOmdbSearchResults = async () => {
-      if (!query.trim() && !genre.trim()) {
+      if (!searchText.trim()) {
         setResults([]);
         setLoading(false);
         return;
@@ -40,197 +40,51 @@ const SearchResultsPage = () => {
         const res = await axios.get("https://www.omdbapi.com/", {
           params: {
             apikey: OMDB_API_KEY,
-            s: query,
+            s: searchText.trim(),
           },
         });
 
-        let formatted = [];
-
-        if (res.data.Search) {
-          formatted = res.data.Search
-            .filter((movie) => movie.Type === "movie" || movie.Type === "series")
-            .map((movie) => ({
-              id: movie.imdbID,
-              title: movie.Title,
-              year: movie.Year,
-              poster: movie.Poster,
-              type: movie.Type,
-              imdbRating: null,
-            }));
-
-          if (category === "Movies") {
-            formatted = formatted.filter((m) => m.type === "movie");
-          } else if (category === "Series") {
-            formatted = formatted.filter((m) => m.type === "series");
-          }
-
-          if (year) {
-            formatted = formatted.filter((m) =>
-              String(m.year).includes(year)
-            );
-          }
+        if (res.data.Response === "False" || !res.data.Search) {
+          setResults([]);
+          return;
         }
+
+        const formatted = res.data.Search
+          .filter((item) => item.Type === "movie" || item.Type === "series")
+          .map((item) => ({
+            id: item.imdbID,
+            imdbID: item.imdbID,
+            title: item.Title,
+            year: item.Year,
+            poster: item.Poster,
+            type: item.Type,
+            imdbRating: null,
+            tmdbPopularity: 0,
+          }));
 
         setResults(formatted);
       } catch (err) {
-        console.error("Error fetching search results:", err);
+        console.error("Error fetching OMDb search results:", err);
         setResults([]);
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchTmdbGenreBucket = async ({
-      mediaType,
-      genreName,
-      queryText,
-      selectedYearParam,
-    }) => {
-      const genreListRes = await axios.get(
-        `https://api.themoviedb.org/3/genre/${mediaType}/list`,
-        {
-          params: {
-            api_key: TMDB_API_KEY,
-            language: "en-US",
-          },
-        }
-      );
-
-      const matchedGenre = (genreListRes.data.genres || []).find(
-        (g) => g.name.toLowerCase() === genreName.toLowerCase()
-      );
-
-      if (!matchedGenre) {
-        return [];
-      }
-
-     const discoverParams = {
-      api_key: TMDB_API_KEY,
-      language: "en-US",
-      with_genres: matchedGenre.id,
-      include_adult: false,
-      page: 1,
-      sort_by: "popularity.desc",
-};
-
-if (selectedYearParam) {
-  if (mediaType === "movie") {
-    discoverParams.primary_release_year = selectedYearParam;
-  } else {
-    discoverParams.first_air_date_year = selectedYearParam;
-  }
-}
-
-const discoverRes = await axios.get(
-  `https://api.themoviedb.org/3/discover/${mediaType}`,
-  {
-    params: discoverParams,
-  }
-);
-
-      const tmdbItems = discoverRes.data.results || [];
-
-      const enriched = await Promise.all(
-        tmdbItems.slice(0, 24).map(async (item) => {
-          try {
-            const externalIdsRes = await axios.get(
-              `https://api.themoviedb.org/3/${mediaType}/${item.id}/external_ids`,
-              {
-                params: {
-                  api_key: TMDB_API_KEY,
-                },
-              }
-            );
-
-            const imdbID = externalIdsRes.data.imdb_id;
-
-            let omdbItem = null;
-
-            if (imdbID) {
-              try {
-                const omdbRes = await axios.get("https://www.omdbapi.com/", {
-                  params: {
-                    apikey: OMDB_API_KEY,
-                    i: imdbID,
-                  },
-                });
-
-                omdbItem = omdbRes.data;
-              } catch (err) {
-                console.error(`OMDb enrichment failed for ${item.title || item.name}:`, err);
-              }
-            }
-
-            const title = omdbItem?.Title || item.title || item.name || "Untitled";
-            const itemYear =
-              omdbItem?.Year && omdbItem.Year !== "N/A"
-                ? omdbItem.Year
-                : mediaType === "movie"
-                ? item.release_date
-                  ? item.release_date.slice(0, 4)
-                  : "N/A"
-                : item.first_air_date
-                ? item.first_air_date.slice(0, 4)
-                : "N/A";
-
-            return {
-              id: imdbID || item.id,
-              imdbID: imdbID || null,
-              title,
-              year: itemYear,
-              poster: item.poster_path
-                ? `${TMDB_IMAGE_BASE}${item.poster_path}`
-                : omdbItem?.Poster && omdbItem.Poster !== "N/A"
-                ? omdbItem.Poster
-                : null,
-              type: mediaType === "movie" ? "movie" : "series",
-              imdbRating: omdbItem?.imdbRating || "N/A",
-            };
-          } catch (err) {
-            console.error(`Error enriching ${item.title || item.name}:`, err);
-
-            return {
-              id: item.id,
-              imdbID: null,
-              title: item.title || item.name || "Untitled",
-              year:
-                mediaType === "movie"
-                  ? item.release_date
-                    ? item.release_date.slice(0, 4)
-                    : "N/A"
-                  : item.first_air_date
-                  ? item.first_air_date.slice(0, 4)
-                  : "N/A",
-              poster: item.poster_path
-                ? `${TMDB_IMAGE_BASE}${item.poster_path}`
-                : null,
-              type: mediaType === "movie" ? "movie" : "series",
-              imdbRating: "N/A",
-            };
-          }
-        })
-      );
-
-      let cleaned = enriched.filter((item) => item !== null);
-
-      if (queryText.trim()) {
-        cleaned = cleaned.filter((item) =>
-          item.title.toLowerCase().includes(queryText.toLowerCase())
-        );
-      }
-
-      return cleaned;
-    };
-
-    const fetchGenreResults = async () => {
-      if (!genre.trim()) {
+    const fetchFilterResults = async () => {
+      if (!TMDB_API_KEY) {
+        console.error("Missing TMDB API key");
         setResults([]);
         setLoading(false);
         return;
       }
 
-      if (!TMDB_API_KEY) {
-        console.error("Missing REACT_APP_TMDB_API_KEY");
+      const hasAnyFilter =
+        (category && category !== "All") ||
+        !!year ||
+        !!genre;
+
+      if (!hasAnyFilter) {
         setResults([]);
         setLoading(false);
         return;
@@ -240,68 +94,185 @@ const discoverRes = await axios.get(
         setLoading(true);
         setGenreLabel(genre);
 
-        let combinedResults = [];
+        let mediaTypes = [];
 
         if (category === "Movies") {
-          combinedResults = await fetchTmdbGenreBucket({
-            mediaType: "movie",
-            genreName: genre,
-            queryText: query,
-            selectedYearParam: year,
-          });
+          mediaTypes = ["movie"];
         } else if (category === "Series") {
-  combinedResults = await fetchTmdbGenreBucket({
-    mediaType: "tv",
-    genreName: genre,
-    queryText: query,
-    selectedYearParam: year,
-  });
-} else {
-          const [movieResults, tvResults] = await Promise.all([
-            fetchTmdbGenreBucket({
-  mediaType: "movie",
-  genreName: genre,
-  queryText: query,
-  selectedYearParam: year,
-}),
-fetchTmdbGenreBucket({
-  mediaType: "tv",
-  genreName: genre,
-  queryText: query,
-  selectedYearParam: year,
-}),
-          ]);
-
-          combinedResults = [...movieResults, ...tvResults];
+          mediaTypes = ["tv"];
+        } else {
+          mediaTypes = ["movie", "tv"];
         }
 
-        if (year) {
-          combinedResults = combinedResults.filter((item) =>
-            String(item.year).includes(year)
+        const today = new Date().toISOString().split("T")[0];
+        let combined = [];
+
+        for (const mediaType of mediaTypes) {
+          const discoverParams = {
+            api_key: TMDB_API_KEY,
+            language: "en-US",
+            sort_by: "popularity.desc",
+            include_adult: false,
+            page: 1,
+            vote_count_gte: 50,
+          };
+
+          if (year) {
+            if (mediaType === "movie") {
+              discoverParams.primary_release_year = year;
+            } else {
+              discoverParams.first_air_date_year = year;
+            }
+          } else {
+            if (mediaType === "movie") {
+              discoverParams["primary_release_date.lte"] = today;
+            } else {
+              discoverParams["first_air_date.lte"] = today;
+            }
+          }
+
+          if (genre) {
+            const genreListRes = await axios.get(
+              `https://api.themoviedb.org/3/genre/${mediaType}/list`,
+              {
+                params: {
+                  api_key: TMDB_API_KEY,
+                  language: "en-US",
+                },
+              }
+            );
+
+            const matchedGenre = (genreListRes.data.genres || []).find(
+              (g) => g.name.toLowerCase() === genre.toLowerCase()
+            );
+
+            if (!matchedGenre) {
+              continue;
+            }
+
+            discoverParams.with_genres = matchedGenre.id;
+          }
+
+          const pageRequests = [1, 2].map((pageNumber) =>
+            axios.get(`https://api.themoviedb.org/3/discover/${mediaType}`, {
+              params: {
+                ...discoverParams,
+                page: pageNumber,
+              },
+            })
           );
+
+          const pageResponses = await Promise.all(pageRequests);
+
+          for (const response of pageResponses) {
+            const discoveredItems = (response.data.results || []).map((item) => ({
+              ...item,
+              __mediaType: mediaType,
+            }));
+
+            combined = [...combined, ...discoveredItems];
+          }
         }
 
-        combinedResults.sort((a, b) => {
-          const ratingA = parseFloat(a.imdbRating) || 0;
-          const ratingB = parseFloat(b.imdbRating) || 0;
-          return ratingB - ratingA;
-        });
+        const unique = Object.values(
+          combined.reduce((acc, item) => {
+            const key = `${item.__mediaType}-${item.id}`;
+            acc[key] = item;
+            return acc;
+          }, {})
+        );
 
-        setResults(combinedResults);
+        const enriched = await Promise.all(
+          unique.slice(0, 60).map(async (item) => {
+            try {
+              let imdbID = null;
+              let omdbItem = null;
+
+              try {
+                const externalIdsRes = await axios.get(
+                  `https://api.themoviedb.org/3/${item.__mediaType}/${item.id}/external_ids`,
+                  {
+                    params: {
+                      api_key: TMDB_API_KEY,
+                    },
+                  }
+                );
+
+                imdbID = externalIdsRes.data.imdb_id || null;
+              } catch (err) {
+                console.error("TMDB external_ids error:", err);
+              }
+
+              if (imdbID) {
+                try {
+                  const omdbRes = await axios.get("https://www.omdbapi.com/", {
+                    params: {
+                      apikey: OMDB_API_KEY,
+                      i: imdbID,
+                    },
+                  });
+
+                  omdbItem = omdbRes.data;
+                } catch (err) {
+                  console.error(`OMDb enrichment failed for ${item.title || item.name}:`, err);
+                }
+              }
+
+              const resolvedYear =
+                omdbItem?.Year && omdbItem.Year !== "N/A"
+                  ? omdbItem.Year
+                  : item.__mediaType === "movie"
+                  ? item.release_date
+                    ? item.release_date.slice(0, 4)
+                    : "N/A"
+                  : item.first_air_date
+                  ? item.first_air_date.slice(0, 4)
+                  : "N/A";
+
+              return {
+                id: imdbID || `${item.__mediaType}-${item.id}`,
+                imdbID: imdbID || null,
+                title: omdbItem?.Title || item.title || item.name || "Untitled",
+                year: resolvedYear,
+                poster: item.poster_path
+                  ? `${TMDB_IMAGE_BASE}${item.poster_path}`
+                  : omdbItem?.Poster && omdbItem.Poster !== "N/A"
+                  ? omdbItem.Poster
+                  : null,
+                type: omdbItem?.Type || (item.__mediaType === "movie" ? "movie" : "series"),
+                imdbRating: omdbItem?.imdbRating || "N/A",
+                tmdbPopularity: item.popularity || 0,
+              };
+            } catch (err) {
+              console.error(`Error enriching ${item.title || item.name}:`, err);
+              return null;
+            }
+          })
+        );
+
+        const cleaned = enriched
+  .filter((item) => item && item.poster)
+  .sort((a, b) => {
+    const ratingA = parseFloat(a.imdbRating) || 0;
+    const ratingB = parseFloat(b.imdbRating) || 0;
+
+    return ratingB - ratingA;
+  });
+        setResults(cleaned);
       } catch (err) {
-        console.error("Error fetching genre results:", err);
+        console.error("Error fetching filter results:", err);
         setResults([]);
       } finally {
         setLoading(false);
       }
     };
 
-    if (genre) {
-      fetchGenreResults();
-    } else {
+    if (searchText.trim()) {
       fetchOmdbSearchResults();
+    } else {
+      fetchFilterResults();
     }
-  }, [query, category, genre, year]);
+  }, [searchText, category, genre, year]);
 
   const availableYears = useMemo(() => {
     return [...new Set(results.map((movie) => movie.year))]
@@ -320,11 +291,17 @@ fetchTmdbGenreBucket({
     );
   }, [results, selectedYear]);
 
-  const headingText = genre
-    ? query
-      ? `Genre: ${genreLabel || genre} for "${query}"`
-      : `Genre: ${genreLabel || genre}`
-    : `Search results for "${query}"`;
+  const headingText = searchText
+    ? `Search results for "${searchText}"`
+    : genre
+    ? `Genre: ${genreLabel || genre}`
+    : "Filtered Results";
+
+  const subheadingText = searchText
+    ? ""
+    : genre
+    ? "Sorted by IMDb rating. Filter by release year below."
+    : "Sorted by popularity. Filter by release year below.";
 
   return (
     <div style={styles.page}>
@@ -332,10 +309,8 @@ fetchTmdbGenreBucket({
         <div style={styles.topBar}>
           <div>
             <h1 style={styles.heading}>{headingText}</h1>
-            {genre ? (
-              <p style={styles.subheading}>
-                Sorted by IMDb rating. Filter by release year below.
-              </p>
+            {subheadingText ? (
+              <p style={styles.subheading}>{subheadingText}</p>
             ) : null}
           </div>
 
@@ -367,11 +342,20 @@ fetchTmdbGenreBucket({
             {filteredResults.map((movie) => (
               <div
                 key={movie.id}
-                style={styles.card}
-                onClick={() => navigate(`/movies/${movie.id}`)}
+                style={{
+                  ...styles.card,
+                  cursor: movie.imdbID ? "pointer" : "default",
+                }}
+                onClick={() => {
+                  if (movie.imdbID) {
+                    navigate(`/movies/${movie.imdbID}`);
+                  }
+                }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.03)";
-                  e.currentTarget.style.boxShadow = "0 10px 20px rgba(0,0,0,0.5)";
+                  if (movie.imdbID) {
+                    e.currentTarget.style.transform = "scale(1.03)";
+                    e.currentTarget.style.boxShadow = "0 10px 20px rgba(0,0,0,0.5)";
+                  }
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = "scale(1)";
@@ -396,10 +380,8 @@ fetchTmdbGenreBucket({
                   <p style={styles.subtitle}>
                     {movie.year} • {movie.type}
                   </p>
-                  {genre ? (
-                    <p style={styles.rating}>
-                      IMDb: {movie.imdbRating && movie.imdbRating !== "N/A" ? movie.imdbRating : "N/A"}
-                    </p>
+                  {movie.imdbRating && movie.imdbRating !== "N/A" ? (
+                    <p style={styles.rating}>IMDb: {movie.imdbRating}</p>
                   ) : null}
                 </div>
               </div>
@@ -471,7 +453,6 @@ const styles = {
     backgroundColor: "#1e1e1e",
     borderRadius: "12px",
     overflow: "hidden",
-    cursor: "pointer",
     transition: "transform 0.2s, box-shadow 0.2s",
   },
   poster: {
