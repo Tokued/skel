@@ -22,6 +22,21 @@ const newUserSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+
+    // ✅ ADD THESE (admin system)
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    isBanned: {
+      type: Boolean,
+      default: false,
+    },
+    warned: {
+      type: Boolean,
+      default: false,
+    },
+
   },
   { collection: "users" }
 );

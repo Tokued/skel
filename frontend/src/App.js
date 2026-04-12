@@ -15,6 +15,7 @@ import Reviews from "./components/pages/Reviews";
 import getUserInfo from "./utilities/decodeJwt";
 import MoviePage from "./components/pages/moviePage";
 import SearchResultsPage from "./components/pages/searchResultsPage";
+import AdminDashboard from "./components/pages/AdminDashboard";
 
 export const UserContext = createContext();
 
@@ -38,6 +39,7 @@ const App = () => {
           <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/movies/:id" element={<MoviePage />} />
           <Route path="/search" element={<SearchResultsPage />} />
+          <Route path="/admin" element={<AdminDashboard />} />
 
           {/* ✅ FIXED: pass movie ID into Reviews */}
           <Route path="/reviews/:id" element={<Reviews />} />

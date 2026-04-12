@@ -3,7 +3,7 @@ import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
-const OMDB_API_KEY = "1d0ab4bc";
+const OMDB_API_KEY = "96e6cc14";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 
 const SearchResultsPage = () => {

@@ -2,6 +2,7 @@ const express = require("express");
 const axios = require("axios");
 const router = express.Router();
 
+// 🔎 SEARCH MOVIES
 router.get("/search", async (req, res) => {
   const query = req.query.query;
 
@@ -10,18 +11,18 @@ router.get("/search", async (req, res) => {
   }
 
   try {
-    const response = await axios.get("http://www.omdbapi.com/", {
+    const response = await axios.get("https://www.omdbapi.com/", {
       params: {
         apikey: process.env.OMDB_API_KEY,
         s: query,
       },
     });
 
-    if (response.data.Response === "False") {
+    if (!response.data || response.data.Response === "False") {
       return res.json([]);
     }
 
-    const filteredResults = response.data.Search.filter(
+    const filteredResults = (response.data.Search || []).filter(
       (item) => item.Type === "movie" || item.Type === "series"
     );
 
@@ -35,23 +36,24 @@ router.get("/search", async (req, res) => {
 
     res.json(movies);
   } catch (err) {
-    console.error(err.message);
+    console.error("SEARCH ERROR:", err.message);
     res.status(500).json({ message: "Error fetching movies" });
   }
 });
 
+// 🎬 GET MOVIE BY ID
 router.get("/:id", async (req, res) => {
   const movieId = req.params.id;
 
   try {
-    const response = await axios.get("http://www.omdbapi.com/", {
+    const response = await axios.get("https://www.omdbapi.com/", {
       params: {
         apikey: process.env.OMDB_API_KEY,
         i: movieId,
       },
     });
 
-    if (response.data.Response === "False") {
+    if (!response.data || response.data.Response === "False") {
       return res.status(404).json({ message: "Movie not found" });
     }
 
@@ -68,7 +70,7 @@ router.get("/:id", async (req, res) => {
 
     res.json(movie);
   } catch (err) {
-    console.error(err.message);
+    console.error("MOVIE ERROR:", err.message);
     res.status(500).json({ message: "Error fetching movie" });
   }
 });

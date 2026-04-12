@@ -7,6 +7,10 @@ const reviewSchema = new mongoose.Schema({
     reviewText: { type: String, required: true },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],      // users who liked
     dislikes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],   // users who disliked
+
+    // ✅ ADD THIS (for admin dashboard)
+    flagged: { type: Boolean, default: false }
+
 }, { timestamps: true });
 
 module.exports = mongoose.model("Review", reviewSchema);

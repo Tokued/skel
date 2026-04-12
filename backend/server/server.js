@@ -17,6 +17,7 @@ const searchAddRoute = require("./routes/searchAdd");
 const searchGetAllRoute = require("./routes/searchGetAll");
 const movieRoutes = require("./routes/movies");
 const trailerGet = require("./routes/trailerGet");
+const adminRoutes = require("./routes/admin");
 
 const reviewRoute = require("./routes/review.routes");
 
@@ -31,6 +32,7 @@ app.use(express.json());   // only once
 
 // Routes
 app.use("/reviews", reviewRoute);
+app.use("/admin", adminRoutes);
 
 // ---------------- USER ROUTES ----------------
 app.use('/user', loginRoute);
