@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/vmdb-logo.png";
@@ -10,6 +10,7 @@ const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 const HomePage = () => {
   const [topMovies, setTopMovies] = useState([]);
   const navigate = useNavigate();
+  const rowRef = useRef(null);
 
   useEffect(() => {
     const fetchTrendingMovies = async () => {
@@ -18,7 +19,7 @@ const HomePage = () => {
           `https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_API_KEY}`
         );
 
-        const movies = trendingRes.data?.results?.slice(0, 10) || [];
+        const movies = trendingRes.data?.results?.slice(0, 20) || [];
 
         const mappedMovies = await Promise.all(
           movies.map(async (movie) => {
@@ -75,6 +76,35 @@ const HomePage = () => {
     }
   };
 
+  const scrollAmount = 396;
+
+  const scrollLeft = () => {
+    const row = rowRef.current;
+    if (!row) return;
+
+    if (row.scrollLeft <= 10) {
+      row.scrollTo({
+        left: row.scrollWidth - row.clientWidth,
+        behavior: "smooth",
+      });
+    } else {
+      row.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    const row = rowRef.current;
+    if (!row) return;
+
+    const maxScrollLeft = row.scrollWidth - row.clientWidth;
+
+    if (row.scrollLeft >= maxScrollLeft - 10) {
+      row.scrollTo({ left: 0, behavior: "smooth" });
+    } else {
+      row.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.hero}>
@@ -91,40 +121,54 @@ const HomePage = () => {
           Updated from TMDb trending movies
         </p>
 
-        <div style={styles.scrollRow}>
-          {topMovies.map((movie) => (
-            <div
-              key={movie.id}
-              style={styles.topMovieCard}
-              onClick={() => handleMovieClick(movie)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "scale(1.05)";
-                e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.4)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              {movie.poster ? (
-                <img
-                  src={movie.poster}
-                  alt={movie.title}
-                  style={styles.topMoviePoster}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              ) : (
-                <div style={styles.noTopPoster}>No Image</div>
-              )}
+        <div style={styles.carouselWrapper}>
+          <button style={styles.arrowButtonLeft} onClick={scrollLeft}>
+            ‹
+          </button>
 
-              <div style={styles.cardContent}>
-                <h4 style={styles.movieTitle}>{movie.title}</h4>
-                <p style={styles.year}>{movie.year}</p>
+          <div
+            ref={rowRef}
+            style={styles.scrollRow}
+            className="hide-scrollbar"
+          >
+            {topMovies.map((movie) => (
+              <div
+                key={movie.id}
+                style={styles.topMovieCard}
+                onClick={() => handleMovieClick(movie)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)";
+                  e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                {movie.poster ? (
+                  <img
+                    src={movie.poster}
+                    alt={movie.title}
+                    style={styles.topMoviePoster}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div style={styles.noTopPoster}>No Image</div>
+                )}
+
+                <div style={styles.cardContent}>
+                  <h4 style={styles.movieTitle}>{movie.title}</h4>
+                  <p style={styles.year}>{movie.year}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <button style={styles.arrowButtonRight} onClick={scrollRight}>
+            ›
+          </button>
         </div>
       </div>
 
@@ -204,6 +248,7 @@ const styles = {
 
   topMoviesSection: {
     marginTop: "50px",
+    position: "relative",
   },
 
   topMoviesSubtitle: {
@@ -211,12 +256,21 @@ const styles = {
     marginBottom: "15px",
   },
 
+  carouselWrapper: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+
   scrollRow: {
     display: "flex",
     gap: "18px",
     overflowX: "auto",
     paddingBottom: "12px",
-    scrollbarWidth: "thin",
+    scrollBehavior: "smooth",
+    scrollbarWidth: "none",
+    msOverflowStyle: "none",
+    flex: 1,
   },
 
   topMovieCard: {
@@ -234,6 +288,32 @@ const styles = {
     width: "100%",
     height: "260px",
     objectFit: "cover",
+  },
+
+  arrowButtonLeft: {
+    backgroundColor: "rgba(20,20,20,0.85)",
+    color: "#fff",
+    border: "none",
+    borderRadius: "50%",
+    width: "42px",
+    height: "42px",
+    fontSize: "28px",
+    cursor: "pointer",
+    marginRight: "12px",
+    flexShrink: 0,
+  },
+
+  arrowButtonRight: {
+    backgroundColor: "rgba(20,20,20,0.85)",
+    color: "#fff",
+    border: "none",
+    borderRadius: "50%",
+    width: "42px",
+    height: "42px",
+    fontSize: "28px",
+    cursor: "pointer",
+    marginLeft: "12px",
+    flexShrink: 0,
   },
 };
 
