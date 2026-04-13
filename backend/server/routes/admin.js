@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
+const axios = require("axios"); // 👈 ADDED
 
 const User = require("../models/userModel");
 const Review = require("../models/review.model");
+
 // ------------------------
 // 📊 ADMIN STATS
 // ------------------------
@@ -23,7 +25,7 @@ router.get("/stats", async (req, res) => {
 });
 
 // ------------------------
-// 👤 GET ALL USERS (with optional search)
+// 👤 GET ALL USERS
 // ------------------------
 router.get("/users", async (req, res) => {
   try {
@@ -40,12 +42,39 @@ router.get("/users", async (req, res) => {
 });
 
 // ------------------------
-// 📝 GET USER REVIEWS
+// 📝 GET USER REVIEWS (FIXED ✅)
 // ------------------------
 router.get("/users/:id/reviews", async (req, res) => {
   try {
     const reviews = await Review.find({ userId: req.params.id });
-    res.json(reviews);
+
+    const updatedReviews = await Promise.all(
+      reviews.map(async (r) => {
+        let movieTitle = "Unknown Movie";
+
+        if (r.movieId) {
+          try {
+            const movieRes = await axios.get("http://www.omdbapi.com/", {
+              params: {
+                apikey: process.env.OMDB_API_KEY,
+                i: r.movieId,
+              },
+            });
+
+            movieTitle = movieRes.data?.Title || "Unknown Movie";
+          } catch (err) {
+            console.log("OMDB error:", err.message);
+          }
+        }
+
+        return {
+          ...r.toObject(),
+          movieTitle, // 👈 FRONTEND USES THIS
+        };
+      })
+    );
+
+    res.json(updatedReviews);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
