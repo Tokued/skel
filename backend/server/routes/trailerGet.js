@@ -15,25 +15,29 @@ router.get("/:imdbID", async (req, res) => {
       {
         params: {
           api_key: TMDB_API_KEY,
-          external_source: "imdb_id"
-        }
+          external_source: "imdb_id",
+        },
       }
     );
 
-    const movie = findRes.data.movie_results[0];
+    const movie = findRes.data.movie_results?.[0];
+    const tv = findRes.data.tv_results?.[0];
 
-    if (!movie) {
+    const item = movie || tv;
+    const mediaType = movie ? "movie" : tv ? "tv" : null;
+
+    if (!item || !mediaType) {
       return res.json({ trailer: null });
     }
 
     // 2. get trailers
     const videoRes = await axios.get(
-      `https://api.themoviedb.org/3/movie/${movie.id}/videos`,
+      `https://api.themoviedb.org/3/${mediaType}/${item.id}/videos`,
       {
         params: {
           api_key: TMDB_API_KEY,
-          language: "en-US"
-        }
+          language: "en-US",
+        },
       }
     );
 
@@ -43,22 +47,36 @@ router.get("/:imdbID", async (req, res) => {
     const trailer =
       results.find(
         (vid) =>
-          vid.type === "Trailer" &&
           vid.site === "YouTube" &&
+          vid.type === "Trailer" &&
           vid.official === true &&
           vid.iso_639_1 === "en"
       ) ||
       results.find(
         (vid) =>
-          vid.type === "Trailer" &&
           vid.site === "YouTube" &&
+          vid.type === "Trailer" &&
           vid.iso_639_1 === "en"
       ) ||
       results.find(
         (vid) =>
-          vid.type === "Trailer" &&
-          vid.site === "YouTube"
-      );
+          vid.site === "YouTube" &&
+          vid.type === "Teaser" &&
+          vid.iso_639_1 === "en"
+      ) ||
+      results.find(
+        (vid) =>
+          vid.site === "YouTube" &&
+          vid.type === "Clip" &&
+          vid.iso_639_1 === "en"
+      ) ||
+      results.find(
+        (vid) =>
+          vid.site === "YouTube" &&
+          vid.type === "Featurette" &&
+          vid.iso_639_1 === "en"
+      ) ||
+      results.find((vid) => vid.site === "YouTube");
 
     if (!trailer) {
       return res.json({ trailer: null });
@@ -66,7 +84,7 @@ router.get("/:imdbID", async (req, res) => {
 
     res.json({
       youtubeId: trailer.key,
-      name: trailer.name
+      name: trailer.name,
     });
   } catch (error) {
     console.error("TMDb error:", error.message);

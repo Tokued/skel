@@ -10,6 +10,9 @@ import InputGroup from "react-bootstrap/InputGroup";
 import logo from "../assets/vmdb-logo.png";
 import "../css/Navbar.css";
 
+const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w185";
+
 export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -33,34 +36,99 @@ export default function Navbar() {
     }
 
     try {
-      const res = await axios.get("https://www.omdbapi.com/", {
+      const res = await axios.get("https://api.themoviedb.org/3/search/multi", {
         params: {
-          apikey: "1d0ab4bc",
-          s: trimmed,
+          api_key: TMDB_API_KEY,
+          query: trimmed,
+          include_adult: false,
+          language: "en-US",
+          page: 1,
         },
       });
 
-      if (res.data.Response === "False" || !res.data.Search) {
+      const rawResults = res.data?.results || [];
+
+      const filtered = rawResults
+        .filter(
+          (item) =>
+            (item.media_type === "movie" || item.media_type === "tv") &&
+            item.poster_path
+        )
+        .slice(0, 10);
+
+      const enrichedResults = await Promise.all(
+        filtered.map(async (item) => {
+          try {
+            const mediaType = item.media_type;
+
+            const externalIdsRes = await axios.get(
+              `https://api.themoviedb.org/3/${mediaType}/${item.id}/external_ids`,
+              {
+                params: {
+                  api_key: TMDB_API_KEY,
+                },
+              }
+            );
+
+            const imdbID = externalIdsRes.data?.imdb_id;
+            if (!imdbID) return null;
+
+            return {
+              id: imdbID,
+              title: item.title || item.name || "Untitled",
+              year:
+                mediaType === "movie"
+                  ? item.release_date
+                    ? item.release_date.slice(0, 4)
+                    : "N/A"
+                  : item.first_air_date
+                  ? item.first_air_date.slice(0, 4)
+                  : "N/A",
+              poster: item.poster_path
+                ? `${TMDB_IMAGE_BASE}${item.poster_path}`
+                : "N/A",
+              type: mediaType === "movie" ? "movie" : "series",
+              popularity: item.popularity || 0,
+            };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const formatted = enrichedResults
+        .filter(Boolean)
+        .sort((a, b) => {
+          const query = trimmed.toLowerCase();
+          const aTitle = a.title.toLowerCase();
+          const bTitle = b.title.toLowerCase();
+
+          const aStarts = aTitle.startsWith(query) ? 1 : 0;
+          const bStarts = bTitle.startsWith(query) ? 1 : 0;
+
+          const aIncludes = aTitle.includes(query) ? 1 : 0;
+          const bIncludes = bTitle.includes(query) ? 1 : 0;
+
+          if (aStarts !== bStarts) return bStarts - aStarts;
+          if (aIncludes !== bIncludes) return bIncludes - aIncludes;
+          if (a.popularity !== b.popularity) return b.popularity - a.popularity;
+
+          return aTitle.localeCompare(bTitle);
+        })
+        .slice(0, 6);
+
+      if (formatted.length === 0) {
         setSearchResults([]);
         setShowDropdown(false);
         return [];
       }
 
-      const formatted = res.data.Search
-        .filter((movie) => movie.Type === "movie" || movie.Type === "series")
-        .map((movie) => ({
-          id: movie.imdbID,
-          title: movie.Title,
-          year: movie.Year,
-          poster: movie.Poster,
-          type: movie.Type,
-        }));
-
       setSearchResults(formatted);
       setShowDropdown(true);
+      setSearchError("");
       return formatted;
     } catch (err) {
-      console.error("Navbar OMDb search error:", err);
+      console.error("Navbar TMDb search error:", err);
       setSearchResults([]);
       setShowDropdown(false);
       return [];
@@ -75,16 +143,19 @@ export default function Navbar() {
   useEffect(() => {
     const delay = setTimeout(() => {
       if (searchQuery.trim()) {
-        setSearchError("");
+        if (searchError === "Type a movie or show title in the search bar.") {
+          setSearchError("");
+        }
         searchMovies();
       } else {
         setSearchResults([]);
         setShowDropdown(false);
+        setSearchError("");
       }
     }, 300);
 
     return () => clearTimeout(delay);
-  }, [searchQuery, searchMovies]);
+  }, [searchQuery, searchMovies, searchError]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -173,6 +244,42 @@ export default function Navbar() {
 
         <div className="vmdb-navbar-center" ref={searchRef}>
           <Form className="vmdb-search-form" onSubmit={handleSearchSubmit}>
+            {showDropdown && searchResults.length > 0 && (
+              <div className="vmdb-suggestions-dropdown">
+                {searchResults.map((movie) => (
+                  <div
+                    key={movie.id}
+                    className="vmdb-suggestion-item"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      setSearchError("");
+                      navigate(`/movies/${movie.id}`);
+                    }}
+                  >
+                    {movie.poster !== "N/A" ? (
+                      <img
+                        src={movie.poster}
+                        alt={movie.title}
+                        className="vmdb-suggestion-poster"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="vmdb-suggestion-no-poster">No Image</div>
+                    )}
+
+                    <div className="vmdb-suggestion-text">
+                      <div className="vmdb-suggestion-title">{movie.title}</div>
+                      <div className="vmdb-suggestion-subtitle">
+                        {movie.year} • {movie.type}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <InputGroup>
               <NavDropdown title="Filters" menuVariant="dark">
                 <div style={styles.filterMenu}>
@@ -245,7 +352,9 @@ export default function Navbar() {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setSearchError("");
+                  if (searchError !== "Type a movie or show title in the search bar.") {
+                    setSearchError("");
+                  }
                 }}
                 className={`vmdb-search-input ${searchError ? "error" : ""}`}
               />
