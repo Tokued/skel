@@ -48,7 +48,14 @@ router.get("/user/:userId", async (req, res) => {
 router.get("/movie/:movieId", async (req, res) => {
     try {
         const { movieId } = req.params;
-        const reviews = await Review.find({ movieId }).populate("userId", "username");
+        console.log("Fetching reviews for movieId:", movieId);
+        const reviews = await Review.find({ movieId }).populate("userId", "username _id");
+        console.log("Found reviews:", reviews);
+
+        // TEMP DEBUG: Show raw review data
+        const rawReviews = await Review.find({ movieId });
+        console.log("Raw reviews (no populate):", rawReviews);
+
         res.status(200).json({
             message: `Reviews for movie ${movieId} fetched successfully`,
             reviews,

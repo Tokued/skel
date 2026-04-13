@@ -116,6 +116,7 @@ const MoviePage = () => {
       const res = await axios.get(
         `http://localhost:8081/reviews/movie/${id}`
       );
+      console.log("Reviews response:", res.data.reviews);
       setReviews(res.data.reviews || []);
     } catch (err) {
       console.error("Error fetching reviews:", err);
@@ -332,7 +333,7 @@ const MoviePage = () => {
                 )}
               </small>
 
-              {r.userId?._id === userId && (
+              {String(r.userId?._id) === String(userId) && (
                 <div className="mt-2 flex gap-2">
                   <button
                     onClick={() => openEdit(r)}
