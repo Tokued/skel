@@ -226,7 +226,7 @@ const WatchlistPage = () => {
                   style={imgStyle}
                 />
 
-                {item && (
+                {item?.watched && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation(); // 🔥 FIX

@@ -30,6 +30,10 @@ const watchlistSchema = new mongoose.Schema({
         min: 1,
         max: 5,
         default: null
+    },
+    watchedAt: {
+        type: Date,
+        default: Date.now
     }
 });
 
