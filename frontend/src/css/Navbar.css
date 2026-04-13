@@ -39,13 +39,11 @@
   display: block;
 }
 
-.vmdb-menu-dropdown .dropdown-toggle {
-  background: transparent !important;
-  border: none !important;
-  color: white !important;
-  font-weight: 600;
-  padding: 0.4rem 0.75rem;
-  box-shadow: none !important;
+.vmdb-menu-dropdown .dropdown-menu {
+  background-color: #1b1b1b;
+  border: 1px solid #333;
+  z-index: 99999 !important;
+  position: absolute !important;
 }
 .vmdb-filters-button .dropdown-toggle {
   background: transparent !important;
@@ -230,4 +228,18 @@
 
 .vmdb-search-input.error::placeholder {
   color: #ff6b6b !important;
+}
+
+.vmdb-navbar {
+  overflow: visible !important;
+  z-index: 1000;
+}
+
+.vmdb-navbar-container {
+  overflow: visible !important;
+}
+
+.vmdb-navbar-center {
+  overflow: visible !important;
+  z-index: 2000;
 }

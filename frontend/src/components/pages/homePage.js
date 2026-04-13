@@ -6,18 +6,58 @@ import TrailerRow from "../TrailerRow";
 
 const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
+const TMDB_POSTER_BG_BASE = "https://image.tmdb.org/t/p/original";
 
 const HomePage = () => {
+  const [bgPosters, setBgPosters] = useState([]);
   const [topMovies, setTopMovies] = useState([]);
   const navigate = useNavigate();
   const rowRef = useRef(null);
 
   useEffect(() => {
-    const fetchTrendingMovies = async () => {
+    const fetchHomePageData = async () => {
       try {
         const trendingRes = await axios.get(
           `https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_API_KEY}`
         );
+
+const years = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
+
+const discoverRequests = years.map((year) =>
+  axios.get(`https://api.themoviedb.org/3/discover/movie`, {
+    params: {
+      api_key: TMDB_API_KEY,
+      language: "en-US",
+      sort_by: "popularity.desc",
+      include_adult: false,
+      include_video: false,
+      page: 1,
+      primary_release_year: year,
+      vote_count_gte: 80,
+    },
+  })
+);
+
+const discoverResponses = await Promise.all(discoverRequests);
+
+const mixedPopular = discoverResponses.flatMap((res) =>
+  (res.data?.results || []).slice(0, 8)
+);
+
+const uniquePopular = Object.values(
+  mixedPopular.reduce((acc, movie) => {
+    acc[movie.id] = movie;
+    return acc;
+  }, {})
+);
+
+const posters = uniquePopular
+  .filter((m) => m.poster_path)
+  .sort(() => 0.5 - Math.random())
+  .slice(0, 40)
+  .map((m) => `${TMDB_POSTER_BG_BASE}${m.poster_path}`);
+
+setBgPosters(posters);
 
         const movies = trendingRes.data?.results?.slice(0, 20) || [];
 
@@ -61,12 +101,25 @@ const HomePage = () => {
 
         setTopMovies(mappedMovies);
       } catch (err) {
-        console.error("Error loading trending movies:", err);
+        console.error("Error loading homepage data:", err);
       }
     };
 
-    fetchTrendingMovies();
+    fetchHomePageData();
   }, []);
+
+  useEffect(() => {
+    if (bgPosters.length === 0) return;
+
+    const interval = setInterval(() => {
+      setBgPosters((prev) => {
+        const shuffled = [...prev].sort(() => 0.5 - Math.random());
+        return shuffled;
+      });
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [bgPosters.length]);
 
   const handleMovieClick = (movie) => {
     if (movie.hasOmdbRoute) {
@@ -107,78 +160,95 @@ const HomePage = () => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.hero}>
-        <img src={logo} alt="VMDB logo" style={styles.logo} />
-        <p style={styles.subtitle}>
-          Search movies, explore titles, and manage your watchlist all in one
-          place.
-        </p>
-      </div>
-
-      <div style={styles.topMoviesSection}>
-        <h2 style={styles.sectionTitle}>Trending Now</h2>
-        <p style={styles.topMoviesSubtitle}>
-          Updated from TMDb trending movies
-        </p>
-
-        <div style={styles.carouselWrapper}>
-          <button style={styles.arrowButtonLeft} onClick={scrollLeft}>
-            ‹
-          </button>
-
+      <div style={styles.posterBackground}>
+        {bgPosters.map((poster, i) => (
           <div
-            ref={rowRef}
-            style={styles.scrollRow}
-            className="hide-scrollbar"
-          >
-            {topMovies.map((movie) => (
-              <div
-                key={movie.id}
-                style={styles.topMovieCard}
-                onClick={() => handleMovieClick(movie)}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.05)";
-                  e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.4)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              >
-                {movie.poster ? (
-                  <img
-                    src={movie.poster}
-                    alt={movie.title}
-                    style={styles.topMoviePoster}
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <div style={styles.noTopPoster}>No Image</div>
-                )}
-
-                <div style={styles.cardContent}>
-                  <h4 style={styles.movieTitle}>{movie.title}</h4>
-                  <p style={styles.year}>{movie.year}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button style={styles.arrowButtonRight} onClick={scrollRight}>
-            ›
-          </button>
-        </div>
+            key={i}
+            style={{
+              ...styles.posterTile,
+              backgroundImage: `url(${poster})`,
+            }}
+          />
+        ))}
       </div>
 
-      <TrailerRow />
+      <div style={styles.posterOverlay} />
+
+      <div style={styles.pageContent}>
+        <div style={styles.hero}>
+          <img src={logo} alt="VMDB logo" style={styles.logo} />
+          <p style={styles.subtitle}>
+            Search movies, explore titles, and manage your watchlist all in one
+            place.
+          </p>
+        </div>
+
+        <div style={styles.topMoviesSection}>
+          <h2 style={styles.sectionTitle}>Trending Now</h2>
+          <p style={styles.topMoviesSubtitle}>
+            Updated from TMDb trending movies
+          </p>
+
+          <div style={styles.carouselWrapper}>
+            <button style={styles.arrowButtonLeft} onClick={scrollLeft}>
+              ‹
+            </button>
+
+            <div
+              ref={rowRef}
+              style={styles.scrollRow}
+              className="hide-scrollbar"
+            >
+              {topMovies.map((movie) => (
+                <div
+                  key={movie.id}
+                  style={styles.topMovieCard}
+                  onClick={() => handleMovieClick(movie)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.4)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                >
+                  {movie.poster ? (
+                    <img
+                      src={movie.poster}
+                      alt={movie.title}
+                      style={styles.topMoviePoster}
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div style={styles.noTopPoster}>No Image</div>
+                  )}
+
+                  <div style={styles.cardContent}>
+                    <h4 style={styles.movieTitle}>{movie.title}</h4>
+                    <p style={styles.year}>{movie.year}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button style={styles.arrowButtonRight} onClick={scrollRight}>
+              ›
+            </button>
+          </div>
+        </div>
+
+        <TrailerRow />
+      </div>
     </div>
   );
 };
 
 const styles = {
   container: {
+    position: "relative",
     padding: "30px",
     maxWidth: "1100px",
     margin: "0 auto",
@@ -186,6 +256,38 @@ const styles = {
     color: "white",
     fontFamily: "Arial, sans-serif",
     backgroundColor: "#0f0f0f",
+  },
+
+posterBackground: {
+  position: "fixed",
+  inset: 0,
+  display: "grid",
+  gridTemplateColumns: "repeat(9, 1fr)",
+  gap: "0px",
+  zIndex: 0,
+  pointerEvents: "none",
+},
+
+posterTile: {
+  aspectRatio: "2 / 3",
+  backgroundSize: "contain",
+  backgroundPosition: "center center",
+  backgroundRepeat: "no-repeat",
+  filter: "brightness(0.45)",
+  transition: "background-image 0.8s ease-in-out",
+},
+
+  posterOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(0,0,0,0.68)",
+    zIndex: 1,
+    pointerEvents: "none",
+  },
+
+  pageContent: {
+    position: "relative",
+    zIndex: 2,
   },
 
   hero: {
