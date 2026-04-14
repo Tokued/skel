@@ -8,6 +8,8 @@ const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 const TMDB_POSTER_BG_BASE = "https://image.tmdb.org/t/p/original";
 
+
+
 const HomePage = () => {
   const [bgPosters, setBgPosters] = useState([]);
   const [topMovies, setTopMovies] = useState([]);

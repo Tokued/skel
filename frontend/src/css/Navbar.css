@@ -231,8 +231,7 @@
 }
 
 .vmdb-navbar {
-  overflow: visible !important;
-  z-index: 1000;
+  background-color: #0b0b0b !important;
 }
 
 .vmdb-navbar-container {
