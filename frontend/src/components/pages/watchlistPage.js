@@ -21,6 +21,12 @@ const WatchlistPage = () => {
   const [ratingFilter, setRatingFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
+  const resetFilters = () => {
+  setSearchQuery("");
+  setStatusFilter("all");
+  setRatingFilter("all");
+  setSortOrder("newest");
+};
 
   const navigate = useNavigate();
 
@@ -223,7 +229,7 @@ const WatchlistPage = () => {
 
           <div style={{ display: "flex", gap: 12, marginBottom: 35 }}>
             <input
-              placeholder="Search movies..."
+              placeholder="Search watchlist..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={inputStyle}
@@ -255,6 +261,10 @@ const WatchlistPage = () => {
                 <option value="all">Any Rating</option>
                 {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} Stars</option>)}
               </select>
+
+              <button onClick={resetFilters} style={resetBtn}>
+                Reset
+              </button>
             </div>
           )}
 
@@ -384,17 +394,18 @@ const styles = {
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
     filter: "brightness(0.45)",
+    transition: "background-image 0.8s ease-in-out",
   },
   posterOverlay: {
     position: "fixed",
     inset: 0,
     background: "rgba(0,0,0,0.68)",
-    zIndex: 1,
+    zIndex: .5,
     pointerEvents: "none",
   },
   pageContent: {
     position: "relative",
-    zIndex: 2,
+    zIndex: 1,
   },
 };
 
@@ -409,5 +420,6 @@ const overlayStyle = { position:"absolute",bottom:0,left:0,right:0,background:"r
 const overlayBtn = { background:"rgba(255,255,255,0.08)",border:"none",borderRadius:8,padding:8,color:"white",cursor:"pointer" };
 const starContainer = {background: "rgba(20,20,20,0.95)",border: "1px solid #222",borderRadius: 10,padding: 10,};
 const favBtn = (item)=>({ position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.7)",border:"none",borderRadius:"50%",width:36,height:36,color:item?.favorite?"#ff4d6d":"white",cursor:"pointer" });
+const resetBtn = {padding: "10px 14px",borderRadius: 8,background: "rgba(255,255,255,0.08)",color: "#ff4d4d",border: "1px solid #333",cursor: "pointer",fontWeight: "bold",};
 
 export default WatchlistPage;
