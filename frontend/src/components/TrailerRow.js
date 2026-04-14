@@ -6,6 +6,7 @@ const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const TrailerRow = () => {
   const [trailers, setTrailers] = useState([]);
   const [selectedTrailer, setSelectedTrailer] = useState(null);
+  const [selectedMovieDetails, setSelectedMovieDetails] = useState(null);
 
   useEffect(() => {
     const fetchTrailers = async () => {
@@ -93,6 +94,34 @@ const TrailerRow = () => {
     fetchTrailers();
   }, []);
 
+  const handleTrailerClick = async (trailer) => {
+    setSelectedTrailer(trailer);
+    setSelectedMovieDetails(null);
+
+    try {
+      const [movieRes, externalIdsRes] = await Promise.all([
+        axios.get(`https://api.themoviedb.org/3/movie/${trailer.id}`, {
+          params: { api_key: TMDB_API_KEY, language: "en-US" },
+        }),
+        axios.get(`https://api.themoviedb.org/3/movie/${trailer.id}/external_ids`, {
+          params: { api_key: TMDB_API_KEY },
+        }),
+      ]);
+
+      setSelectedMovieDetails({
+        ...movieRes.data,
+        imdb_id: externalIdsRes.data?.imdb_id || null,
+      });
+    } catch (err) {
+      console.error("failed to fetch movie details", err);
+    }
+  };
+
+  const closeModal = () => {
+    setSelectedTrailer(null);
+    setSelectedMovieDetails(null);
+  };
+
   return (
     <div style={styles.section}>
       <h2 style={styles.heading}>Featured Trailers</h2>
@@ -102,10 +131,9 @@ const TrailerRow = () => {
           <div key={t.id} style={styles.card}>
             <h3 style={styles.title}>{t.title}</h3>
 
-            {/* ✅ FIXED: thumbnail instead of iframe */}
             <div
               style={styles.frameWrap}
-              onClick={() => setSelectedTrailer(t)}
+              onClick={() => handleTrailerClick(t)}
             >
               <img
                 src={`https://img.youtube.com/vi/${t.youtubeKey}/hqdefault.jpg`}
@@ -121,32 +149,69 @@ const TrailerRow = () => {
       </div>
 
       {selectedTrailer && (
-        <div
-          style={styles.modalOverlay}
-          onClick={() => setSelectedTrailer(null)}
-        >
+        <div style={styles.modalOverlay} onClick={closeModal}>
           <div
             style={styles.modalContent}
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              style={styles.closeButton}
-              onClick={() => setSelectedTrailer(null)}
-            >
+            <button style={styles.closeButton} onClick={closeModal}>
               ×
             </button>
 
-            <h3 style={styles.modalTitle}>{selectedTrailer.title}</h3>
+            <div style={styles.splitModal}>
+              <div style={styles.leftPanel}>
+                <div style={styles.modalFrameWrap}>
+                  <iframe
+                    style={styles.modalIframe}
+                    src={`https://www.youtube.com/embed/${selectedTrailer.youtubeKey}?autoplay=1`}
+                    title={selectedTrailer.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
 
-            <div style={styles.modalFrameWrap}>
-              <iframe
-                style={styles.modalIframe}
-                src={`https://www.youtube.com/embed/${selectedTrailer.youtubeKey}?autoplay=1`}
-                title={selectedTrailer.title}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+              <div style={styles.rightPanel}>
+                {selectedMovieDetails ? (
+                  <>
+                    {selectedMovieDetails.poster_path ? (
+                      <img
+                        src={`https://image.tmdb.org/t/p/w500${selectedMovieDetails.poster_path}`}
+                        alt={selectedMovieDetails.title}
+                        style={styles.sidebarPoster}
+                      />
+                    ) : null}
+
+                    <h3 style={styles.sidebarTitle}>
+                      {selectedMovieDetails.title}
+                    </h3>
+
+                    <p style={styles.sidebarMeta}>
+                      {selectedMovieDetails.release_date?.slice(0, 4) || "N/A"}
+                    </p>
+
+                    <p style={styles.sidebarOverview}>
+                      {selectedMovieDetails.overview || "No overview available."}
+                    </p>
+
+                    {selectedMovieDetails.imdb_id ? (
+                      <a
+                        href={`/movies/${selectedMovieDetails.imdb_id}`}
+                        style={styles.detailsButton}
+                      >
+                        View Details
+                      </a>
+                    ) : (
+                      <button style={styles.disabledButton} disabled>
+                        View Details Unavailable
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div style={styles.loadingText}>Loading details...</div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -238,17 +303,29 @@ const styles = {
 
   modalContent: {
     position: "relative",
-    width: "min(1100px, 95vw)",
+    width: "min(1250px, 96vw)",
     background: "#111",
     borderRadius: "16px",
     padding: "20px",
   },
 
-  modalTitle: {
-    margin: "0 0 16px 0",
-    color: "#fff",
-    textAlign: "center",
-    fontSize: "26px",
+  splitModal: {
+    display: "flex",
+    gap: "20px",
+    alignItems: "stretch",
+  },
+
+  leftPanel: {
+    flex: 3,
+    minWidth: 0,
+  },
+
+  rightPanel: {
+    flex: 1,
+    minWidth: "260px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
   },
 
   modalFrameWrap: {
@@ -266,6 +343,58 @@ const styles = {
     display: "block",
   },
 
+  sidebarPoster: {
+    width: "100%",
+    borderRadius: "10px",
+    objectFit: "cover",
+  },
+
+  sidebarTitle: {
+    margin: 0,
+    color: "#fff",
+    fontSize: "24px",
+    lineHeight: "1.2",
+  },
+
+  sidebarMeta: {
+    margin: 0,
+    color: "#aaa",
+    fontSize: "14px",
+  },
+
+  sidebarOverview: {
+    margin: 0,
+    color: "#ddd",
+    fontSize: "14px",
+    lineHeight: "1.45",
+  },
+
+  detailsButton: {
+    marginTop: "auto",
+    textAlign: "center",
+    padding: "12px",
+    background: "#e50914",
+    color: "#fff",
+    textDecoration: "none",
+    borderRadius: "8px",
+    fontWeight: "600",
+  },
+
+  disabledButton: {
+    marginTop: "auto",
+    padding: "12px",
+    background: "#333",
+    color: "#999",
+    border: "none",
+    borderRadius: "8px",
+    fontWeight: "600",
+  },
+
+  loadingText: {
+    color: "#bbb",
+    fontSize: "14px",
+  },
+
   closeButton: {
     position: "absolute",
     top: "10px",
@@ -276,6 +405,7 @@ const styles = {
     fontSize: "32px",
     cursor: "pointer",
     lineHeight: 1,
+    zIndex: 2,
   },
 };
 
