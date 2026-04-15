@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
 import MovieTrailer from "../MovieTrailer";
@@ -8,6 +8,38 @@ const MoviePage = () => {
   const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
   const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
   const { id } = useParams();
+  const navigate = useNavigate();
+
+  const rowRef = useRef(null);
+
+  const scrollAmount = 396;
+
+  const scrollLeft = () => {
+    const row = rowRef.current;
+    if (!row) return;
+
+    if (row.scrollLeft <= 10) {
+      row.scrollTo({
+        left: row.scrollWidth - row.clientWidth,
+        behavior: "smooth",
+      });
+    } else {
+      row.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    const row = rowRef.current;
+    if (!row) return;
+
+    const maxScrollLeft = row.scrollWidth - row.clientWidth;
+
+    if (row.scrollLeft >= maxScrollLeft - 10) {
+      row.scrollTo({ left: 0, behavior: "smooth" });
+    } else {
+      row.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
 
   const [movie, setMovie] = useState(null);
   const [user, setUser] = useState(null);
@@ -24,6 +56,9 @@ const MoviePage = () => {
   const [editRating, setEditRating] = useState(0);
   const [editText, setEditText] = useState("");
 
+  const [recommendations, setRecommendations] = useState([]);
+  const [tmdbMovieId, setTmdbMovieId] = useState(null);
+
   const userId = user?.id || user?._id;
 
   useEffect(() => {
@@ -35,6 +70,7 @@ const MoviePage = () => {
       setLoading(true);
       setMovieError("");
       setMovie(null);
+      setTmdbMovieId(null);
 
       try {
         const res = await axios.get(`http://localhost:8081/movies/${id}`);
@@ -68,6 +104,8 @@ const MoviePage = () => {
           }
 
           if (tmdbMovie) {
+            setTmdbMovieId(tmdbMovie.id);
+
             const detailsRes = await axios.get(
               `https://api.themoviedb.org/3/movie/${tmdbMovie.id}?api_key=${TMDB_API_KEY}`
             );
@@ -112,6 +150,23 @@ const MoviePage = () => {
   }, [id, TMDB_API_KEY]);
 
   useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!tmdbMovieId) return;
+
+      try {
+        const res = await axios.get(
+          `https://api.themoviedb.org/3/movie/${tmdbMovieId}/recommendations?api_key=${TMDB_API_KEY}`
+        );
+        setRecommendations(res.data.results?.slice(0, 12) || []);
+      } catch (err) {
+        console.error("Error fetching recommendations:", err);
+      }
+    };
+
+    fetchRecommendations();
+  }, [tmdbMovieId, TMDB_API_KEY]);
+
+  useEffect(() => {
     const fetchWatchlist = async () => {
       if (!userId) return;
 
@@ -131,7 +186,6 @@ const MoviePage = () => {
   const fetchReviews = useCallback(async () => {
     try {
       const res = await axios.get(`http://localhost:8081/reviews/movie/${id}`);
-      console.log("Reviews response:", res.data.reviews);
       setReviews(res.data.reviews || []);
     } catch (err) {
       console.error("Error fetching reviews:", err);
@@ -149,7 +203,6 @@ const MoviePage = () => {
     try {
       if (isAdded) {
         setWatchlist((prev) => prev.filter((m) => m.movieId !== id));
-
         await axios.delete(`http://localhost:8081/watchlist/${userId}/${id}`);
       } else {
         const newItem = {
@@ -159,12 +212,10 @@ const MoviePage = () => {
         };
 
         setWatchlist((prev) => [...prev, newItem]);
-
         await axios.post("http://localhost:8081/watchlist/add", newItem);
       }
     } catch (err) {
       alert(err.response?.data?.message || "Watchlist error");
-
       const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
       setWatchlist(res.data);
     }
@@ -382,7 +433,81 @@ const MoviePage = () => {
               )}
             </div>
           ))}
+
+          
         </div>
+
+        {/* RECOMMENDATIONS */}
+{recommendations.length > 0 && (
+  <div className="space-y-6">
+    {/* HEADER */}
+    <div className="flex items-center justify-between">
+      <h2 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
+        You Might Also Like
+      </h2>
+    </div>
+
+    <div className="relative group">
+      {/* LEFT FADE */}
+      <div className="absolute left-0 top-0 h-full w-20 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+
+      {/* RIGHT FADE */}
+      <div className="absolute right-0 top-0 h-full w-20 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+
+      {/* LEFT BUTTON */}
+      <button
+        onClick={scrollLeft}
+        className="opacity-0 group-hover:opacity-100 transition absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-black/70 hover:bg-black p-3 rounded-full shadow-lg backdrop-blur"
+      >
+        ‹
+      </button>
+
+      {/* SCROLL ROW */}
+      <div
+        ref={rowRef}
+        className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth px-8 snap-x snap-mandatory"
+      >
+        {recommendations.map((rec) => (
+          <div
+            key={rec.id}
+            onClick={() => navigate(`/movies/${rec.id}`)}
+            className="relative flex-shrink-0 w-52 cursor-pointer group/card snap-start"
+          >
+            {/* CARD */}
+            <div className="relative overflow-hidden rounded-2xl shadow-xl transform transition duration-300 group-hover/card:scale-105">
+              
+              {/* IMAGE */}
+              <img
+                src={`${TMDB_IMAGE_BASE}${rec.poster_path}`}
+                alt={rec.title}
+                className="w-full h-[300px] object-cover"
+              />
+
+              {/* OVERLAY */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition" />
+
+              {/* TITLE */}
+              <div className="absolute bottom-0 p-3 opacity-0 group-hover/card:opacity-100 transition">
+                <p className="text-sm font-semibold leading-tight">
+                  {rec.title}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* RIGHT BUTTON */}
+      <button
+        onClick={scrollRight}
+        className="opacity-0 group-hover:opacity-100 transition absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/70 hover:bg-black p-3 rounded-full shadow-lg backdrop-blur"
+      >
+        ›
+      </button>
+    </div>
+  </div>
+)}
+
       </div>
 
       {editingReview && (
@@ -416,7 +541,10 @@ const MoviePage = () => {
           </div>
         </div>
       )}
+      
+      
     </div>
+    
   );
 };
 
