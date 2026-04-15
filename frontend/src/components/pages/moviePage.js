@@ -8,8 +8,11 @@ const MoviePage = () => {
   const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
   const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
   const { id } = useParams();
+
   const [movie, setMovie] = useState(null);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [movieError, setMovieError] = useState("");
 
   const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState(0);
@@ -29,6 +32,10 @@ const MoviePage = () => {
 
   useEffect(() => {
     const fetchMovie = async () => {
+      setLoading(true);
+      setMovieError("");
+      setMovie(null);
+
       try {
         const res = await axios.get(`http://localhost:8081/movies/${id}`);
         const baseMovie = res.data;
@@ -90,21 +97,26 @@ const MoviePage = () => {
         setMovie(mergedMovie);
       } catch (err) {
         console.error("Error fetching movie:", err);
+
+        if (err.response?.status === 404) {
+          setMovieError("Movie details unavailable.");
+        } else {
+          setMovieError("Error loading movie.");
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchMovie();
-  }, [id, TMDB_API_KEY, TMDB_IMAGE_BASE]);
+  }, [id, TMDB_API_KEY]);
 
   useEffect(() => {
     const fetchWatchlist = async () => {
       if (!userId) return;
 
       try {
-        const res = await axios.get(
-          `http://localhost:8081/watchlist/${userId}`
-        );
-
+        const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
         setWatchlist(res.data);
       } catch (err) {
         console.error("Watchlist fetch error:", err);
@@ -118,9 +130,7 @@ const MoviePage = () => {
 
   const fetchReviews = useCallback(async () => {
     try {
-      const res = await axios.get(
-        `http://localhost:8081/reviews/movie/${id}`
-      );
+      const res = await axios.get(`http://localhost:8081/reviews/movie/${id}`);
       console.log("Reviews response:", res.data.reviews);
       setReviews(res.data.reviews || []);
     } catch (err) {
@@ -138,13 +148,9 @@ const MoviePage = () => {
 
     try {
       if (isAdded) {
-        setWatchlist((prev) =>
-          prev.filter((m) => m.movieId !== id)
-        );
+        setWatchlist((prev) => prev.filter((m) => m.movieId !== id));
 
-        await axios.delete(
-          `http://localhost:8081/watchlist/${userId}/${id}`
-        );
+        await axios.delete(`http://localhost:8081/watchlist/${userId}/${id}`);
       } else {
         const newItem = {
           userId,
@@ -154,17 +160,12 @@ const MoviePage = () => {
 
         setWatchlist((prev) => [...prev, newItem]);
 
-        await axios.post(
-          "http://localhost:8081/watchlist/add",
-          newItem
-        );
+        await axios.post("http://localhost:8081/watchlist/add", newItem);
       }
     } catch (err) {
       alert(err.response?.data?.message || "Watchlist error");
 
-      const res = await axios.get(
-        `http://localhost:8081/watchlist/${userId}`
-      );
+      const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
       setWatchlist(res.data);
     }
   };
@@ -240,7 +241,31 @@ const MoviePage = () => {
     }
   };
 
-  if (!movie) return <p className="text-white p-6">Loading...</p>;
+  if (loading) {
+    return <p className="text-white p-6">Loading...</p>;
+  }
+
+  if (movieError) {
+    return (
+      <div className="flex justify-center p-10 text-white">
+        <div className="max-w-3xl w-full bg-gray-900 p-8 rounded-lg text-center">
+          <h1 className="text-3xl font-bold mb-4">Movie Unavailable</h1>
+          <p className="text-gray-300 text-lg">{movieError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!movie) {
+    return (
+      <div className="flex justify-center p-10 text-white">
+        <div className="max-w-3xl w-full bg-gray-900 p-8 rounded-lg text-center">
+          <h1 className="text-3xl font-bold mb-4">Movie Unavailable</h1>
+          <p className="text-gray-300 text-lg">No movie data found.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center p-10 text-white">
@@ -326,7 +351,6 @@ const MoviePage = () => {
             <div key={r._id} className="bg-gray-800 p-4 rounded mb-3">
               <div className="flex justify-between">
                 <strong>{r.userId?.username || "User"}</strong>
-
                 <div>{"⭐".repeat(r.rating)}</div>
               </div>
 
