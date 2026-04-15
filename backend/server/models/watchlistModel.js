@@ -33,7 +33,7 @@ const watchlistSchema = new mongoose.Schema({
     },
     watchedAt: {
         type: Date,
-        default: Date.now
+        default: null
     }
 });
 

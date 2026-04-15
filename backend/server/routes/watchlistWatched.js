@@ -16,10 +16,13 @@ router.put("/watched/:userId/:movieId", async (req, res) => {
 
     item.watched = req.body.watched;
 
-    // reset if unwatching
-    if (!item.watched) {
+    if (req.body.watched) {
+      item.watchedAt = new Date();
+    } else {
+      // reset if unwatching
       item.rating = null;
       item.favorite = false;
+      item.watchedAt = null;
     }
 
     await item.save();

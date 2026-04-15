@@ -3,18 +3,72 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/vmdb-logo.png";
 import TrailerRow from "../TrailerRow";
+import RecommendationsRow from "../RecommendationsRow";
+import getUserInfo from "../../utilities/decodeJwt";
 
 const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 const TMDB_POSTER_BG_BASE = "https://image.tmdb.org/t/p/original";
 
-
-
 const HomePage = () => {
   const [bgPosters, setBgPosters] = useState([]);
   const [topMovies, setTopMovies] = useState([]);
+  const [mostRecentWatchedMovie, setMostRecentWatchedMovie] = useState({ id: null, type: "movie" });
+  const [mostRecentWatchedTitle, setMostRecentWatchedTitle] = useState(null);
   const navigate = useNavigate();
   const rowRef = useRef(null);
+
+  // Fetch most recently watched movie from user's watchlist
+  useEffect(() => {
+    const fetchMostRecentWatched = async () => {
+      try {
+        const user = getUserInfo();
+        if (!user) return;
+
+        const watchlistRes = await axios.get(
+          `http://localhost:8081/watchlist/${user.id}`
+        );
+
+        // Filter for watched movies and sort by most recent watched date
+        const watched = watchlistRes.data
+          .filter((m) => m.watched)
+          .sort(
+            (a, b) =>
+              new Date(b.watchedAt || b.updatedAt) -
+              new Date(a.watchedAt || a.updatedAt)
+          );
+
+        if (watched.length > 0) {
+          // Get the movie details to fetch title
+          const movieRes = await axios.get(
+            `http://localhost:8081/movies/${watched[0].movieId}`
+          );
+
+          // Store the title for display
+          setMostRecentWatchedTitle(movieRes.data.title);
+
+          // Search TMDB for this movie to get its TMDb ID
+          const tmdbRes = await axios.get(
+            `https://api.themoviedb.org/3/find/${watched[0].movieId}?api_key=${TMDB_API_KEY}&external_source=imdb_id`
+          );
+
+          // Check if it's a movie or TV show
+          const movie = tmdbRes.data?.movie_results?.[0];
+          const show = tmdbRes.data?.tv_results?.[0];
+
+          if (movie) {
+            setMostRecentWatchedMovie({ id: movie.id, type: "movie" });
+          } else if (show) {
+            setMostRecentWatchedMovie({ id: show.id, type: "tv" });
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching recent watched movie:", err);
+      }
+    };
+
+    fetchMostRecentWatched();
+  }, []);
 
   useEffect(() => {
     const fetchHomePageData = async () => {
@@ -23,43 +77,43 @@ const HomePage = () => {
           `https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_API_KEY}`
         );
 
-const years = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
+        const years = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
 
-const discoverRequests = years.map((year) =>
-  axios.get(`https://api.themoviedb.org/3/discover/movie`, {
-    params: {
-      api_key: TMDB_API_KEY,
-      language: "en-US",
-      sort_by: "popularity.desc",
-      include_adult: false,
-      include_video: false,
-      page: 1,
-      primary_release_year: year,
-      vote_count_gte: 80,
-    },
-  })
-);
+        const discoverRequests = years.map((year) =>
+          axios.get(`https://api.themoviedb.org/3/discover/movie`, {
+            params: {
+              api_key: TMDB_API_KEY,
+              language: "en-US",
+              sort_by: "popularity.desc",
+              include_adult: false,
+              include_video: false,
+              page: 1,
+              primary_release_year: year,
+              vote_count_gte: 80,
+            },
+          })
+        );
 
-const discoverResponses = await Promise.all(discoverRequests);
+        const discoverResponses = await Promise.all(discoverRequests);
 
-const mixedPopular = discoverResponses.flatMap((res) =>
-  (res.data?.results || []).slice(0, 8)
-);
+        const mixedPopular = discoverResponses.flatMap((res) =>
+          (res.data?.results || []).slice(0, 8)
+        );
 
-const uniquePopular = Object.values(
-  mixedPopular.reduce((acc, movie) => {
-    acc[movie.id] = movie;
-    return acc;
-  }, {})
-);
+        const uniquePopular = Object.values(
+          mixedPopular.reduce((acc, movie) => {
+            acc[movie.id] = movie;
+            return acc;
+          }, {})
+        );
 
-const posters = uniquePopular
-  .filter((m) => m.poster_path)
-  .sort(() => 0.5 - Math.random())
-  .slice(0, 40)
-  .map((m) => `${TMDB_POSTER_BG_BASE}${m.poster_path}`);
+        const posters = uniquePopular
+          .filter((m) => m.poster_path)
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 40)
+          .map((m) => `${TMDB_POSTER_BG_BASE}${m.poster_path}`);
 
-setBgPosters(posters);
+        setBgPosters(posters);
 
         const movies = trendingRes.data?.results?.slice(0, 20) || [];
 
@@ -242,6 +296,12 @@ setBgPosters(posters);
           </div>
         </div>
 
+        <RecommendationsRow
+          mostRecentMovieTmdbId={mostRecentWatchedMovie?.id}
+          watchedMovieTitle={mostRecentWatchedTitle}
+          mediaType={mostRecentWatchedMovie?.type}
+        />
+
         <TrailerRow />
       </div>
     </div>
@@ -260,24 +320,24 @@ const styles = {
     backgroundColor: "#0f0f0f",
   },
 
-posterBackground: {
-  position: "fixed",
-  inset: 0,
-  display: "grid",
-  gridTemplateColumns: "repeat(9, 1fr)",
-  gap: "0px",
-  zIndex: 0,
-  pointerEvents: "none",
-},
+  posterBackground: {
+    position: "fixed",
+    inset: 0,
+    display: "grid",
+    gridTemplateColumns: "repeat(9, 1fr)",
+    gap: "0px",
+    zIndex: 0,
+    pointerEvents: "none",
+  },
 
-posterTile: {
-  aspectRatio: "2 / 3",
-  backgroundSize: "contain",
-  backgroundPosition: "center center",
-  backgroundRepeat: "no-repeat",
-  filter: "brightness(0.45)",
-  transition: "background-image 0.8s ease-in-out",
-},
+  posterTile: {
+    aspectRatio: "2 / 3",
+    backgroundSize: "contain",
+    backgroundPosition: "center center",
+    backgroundRepeat: "no-repeat",
+    filter: "brightness(0.45)",
+    transition: "background-image 0.8s ease-in-out",
+  },
 
   posterOverlay: {
     position: "fixed",
