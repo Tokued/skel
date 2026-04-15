@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/Button";
+import landingBg from "../../assets/landing-bg.jpg";
 
 const Landingpage = () => {
   const navigate = useNavigate();
@@ -9,8 +10,7 @@ const Landingpage = () => {
     <div
       className="min-h-screen flex items-center justify-center text-white"
       style={{
-        backgroundImage:
-          "url('https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?auto=format&fit=crop&w=1400&q=80')",
+        backgroundImage: `url(${landingBg})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         position: "relative",
@@ -21,7 +21,8 @@ const Landingpage = () => {
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.9))",
+            "linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.95))",
+          backdropFilter: "blur(2px)",
         }}
       ></div>
 
