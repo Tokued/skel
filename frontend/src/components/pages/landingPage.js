@@ -28,7 +28,7 @@ const Landingpage = () => {
       {/* Content */}
       <div className="relative z-10 text-center px-6">
         <h1 className="text-5xl font-bold mb-4 tracking-wide">
-          🎬 MovieVerse
+          🎬 VMDB
         </h1>
 
         <p className="text-lg text-gray-300 mb-5 max-w-xl mx-auto">
