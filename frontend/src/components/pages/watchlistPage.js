@@ -16,17 +16,19 @@ const WatchlistPage = () => {
 
   const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
   const TMDB_POSTER_BG_BASE = "https://image.tmdb.org/t/p/original";
+  const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [ratingFilter, setRatingFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
+
   const resetFilters = () => {
-  setSearchQuery("");
-  setStatusFilter("all");
-  setRatingFilter("all");
-  setSortOrder("newest");
-};
+    setSearchQuery("");
+    setStatusFilter("all");
+    setRatingFilter("all");
+    setSortOrder("newest");
+  };
 
   const navigate = useNavigate();
 
@@ -43,19 +45,70 @@ const WatchlistPage = () => {
         setWatchlist(res.data);
 
         const movieDetails = await Promise.all(
-          res.data.map((m) =>
-            axios.get(`http://localhost:8081/movies/${m.movieId}`)
-          )
+          res.data.map(async (m) => {
+            try {
+              const movieRes = await axios.get(`http://localhost:8081/movies/${m.movieId}`);
+              const baseMovie = movieRes.data;
+
+              let tmdbPoster = null;
+
+              try {
+                const findRes = await axios.get(
+                  `https://api.themoviedb.org/3/find/${m.movieId}?api_key=${TMDB_API_KEY}&external_source=imdb_id`
+                );
+
+                let tmdbMovie = findRes.data?.movie_results?.[0] || null;
+
+                if (!tmdbMovie && baseMovie?.title) {
+                  const searchRes = await axios.get(
+                    `https://api.themoviedb.org/3/search/movie`,
+                    {
+                      params: {
+                        api_key: TMDB_API_KEY,
+                        query: baseMovie.title,
+                        language: "en-US",
+                        page: 1,
+                      },
+                    }
+                  );
+
+                  tmdbMovie = searchRes.data?.results?.[0] || null;
+                }
+
+                if (tmdbMovie?.poster_path) {
+                  tmdbPoster = `${TMDB_IMAGE_BASE}${tmdbMovie.poster_path}`;
+                } else if (tmdbMovie?.id) {
+                  const detailsRes = await axios.get(
+                    `https://api.themoviedb.org/3/movie/${tmdbMovie.id}?api_key=${TMDB_API_KEY}`
+                  );
+
+                  if (detailsRes.data?.poster_path) {
+                    tmdbPoster = `${TMDB_IMAGE_BASE}${detailsRes.data.poster_path}`;
+                  }
+                }
+              } catch (fallbackErr) {
+                console.error(`TMDB fallback error for ${m.movieId}:`, fallbackErr);
+              }
+
+              return {
+                ...baseMovie,
+                tmdbPoster,
+              };
+            } catch (movieErr) {
+              console.error(`Failed to fetch movie ${m.movieId}:`, movieErr);
+              return null;
+            }
+          })
         );
 
-        setMovies(movieDetails.map((r) => r.data));
+        setMovies(movieDetails.filter(Boolean));
       } catch (err) {
         console.error("Failed to fetch watchlist:", err);
       }
     };
 
     fetchWatchlist();
-  }, [user]);
+  }, [user, TMDB_API_KEY]);
 
   // 🔥 BACKGROUND FETCH
   useEffect(() => {
@@ -94,7 +147,7 @@ const WatchlistPage = () => {
     };
 
     fetchBackground();
-  }, []);
+  }, [TMDB_API_KEY]);
 
   // 🔥 SHUFFLE BACKGROUND
   useEffect(() => {
@@ -206,7 +259,6 @@ const WatchlistPage = () => {
 
   return (
     <div style={{ minHeight: "100vh", color: "white" }}>
-
       {/* 🔥 BACKGROUND */}
       <div style={styles.posterBackground}>
         {bgPosters.map((poster, i) => (
@@ -259,7 +311,11 @@ const WatchlistPage = () => {
 
               <select value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)} style={dropdownInput}>
                 <option value="all">Any Rating</option>
-                {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} Stars</option>)}
+                {[5, 4, 3, 2, 1].map((r) => (
+                  <option key={r} value={r}>
+                    {r} Stars
+                  </option>
+                ))}
               </select>
 
               <button onClick={resetFilters} style={resetBtn}>
@@ -283,12 +339,42 @@ const WatchlistPage = () => {
                       transform: isHovered ? "scale(1.03)" : "scale(1)",
                     }}
                   >
-                    <img
-                      src={movie.poster}
-                      alt={movie.title}
-                      onClick={() => navigate(`/movies/${movie.id}`)}
-                      style={imgStyle}
-                    />
+                    {movie.poster && movie.poster !== "N/A" ? (
+                      <img
+                        src={movie.poster}
+                        alt={movie.title}
+                        onClick={() => navigate(`/movies/${movie.id}`)}
+                        style={imgStyle}
+                        onError={(e) => {
+                          if (movie.tmdbPoster && e.currentTarget.src !== movie.tmdbPoster) {
+                            e.currentTarget.src = movie.tmdbPoster;
+                          } else {
+                            e.currentTarget.style.display = "none";
+                          }
+                        }}
+                      />
+                    ) : movie.tmdbPoster ? (
+                      <img
+                        src={movie.tmdbPoster}
+                        alt={movie.title}
+                        onClick={() => navigate(`/movies/${movie.id}`)}
+                        style={imgStyle}
+                      />
+                    ) : (
+                      <div
+                        onClick={() => navigate(`/movies/${movie.id}`)}
+                        style={{
+                          ...imgStyle,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: "#222",
+                          color: "#999",
+                        }}
+                      >
+                        No Image
+                      </div>
+                    )}
 
                     {item?.watched && (
                       <button
@@ -304,47 +390,57 @@ const WatchlistPage = () => {
 
                     {isHovered && (
                       <div style={overlayStyle}>
-                        <button onClick={(e)=>{e.stopPropagation();toggleWatched(movie.id)}} style={overlayBtn}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleWatched(movie.id);
+                          }}
+                          style={overlayBtn}
+                        >
                           {item?.watched ? "Unwatch" : "Mark Watched"}
                         </button>
 
                         {item?.watched && (
                           <div
-                          onClick={(e) => e.stopPropagation()}
-                          style={starContainer}
+                            onClick={(e) => e.stopPropagation()}
+                            style={starContainer}
                           >
                             <div style={{ fontSize: 12, color: "#aaa", marginBottom: 6 }}>
                               Rate this movie
-                              </div>
-                              <div style={{ display: "flex", gap: 6 }}>
-                                {[1, 2, 3, 4, 5].map((star) => {
-                                  const current = item?.rating || 0;
-                                  return (
+                            </div>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              {[1, 2, 3, 4, 5].map((star) => {
+                                const current = item?.rating || 0;
+                                return (
                                   <span
-                                  key={star}
-                                  onClick={() => setRating(movie.id, star)}
-                                  style={{
-                                    cursor: "pointer",
-                                    fontSize: 18,
-                                    color: star <= current ? "#ffcc00" : "#444",
-                                    transition: "0.2s",
-                                  }}
+                                    key={star}
+                                    onClick={() => setRating(movie.id, star)}
+                                    style={{
+                                      cursor: "pointer",
+                                      fontSize: 18,
+                                      color: star <= current ? "#ffcc00" : "#444",
+                                      transition: "0.2s",
+                                    }}
                                   >
                                     ★
-                                    </span>
-                                    );
-                                    })}
-                                    </div>
-                                    {item?.rating && (
-                                      <div style={{ marginTop: 6, fontSize: 12, color: "#888" }}>
-                                        {item.rating} / 5 stars
-                                        </div>
-                                      )}
-                                      </div>
-                          )}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                            {item?.rating && (
+                              <div style={{ marginTop: 6, fontSize: 12, color: "#888" }}>
+                                {item.rating} / 5 stars
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <button
-                          onClick={(e)=>{e.stopPropagation();removeMovie(movie.id)}}
-                          style={{...overlayBtn,color:"#ff4d4d"}}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeMovie(movie.id);
+                          }}
+                          style={{ ...overlayBtn, color: "#ff4d4d" }}
                         >
                           Remove
                         </button>
@@ -400,7 +496,7 @@ const styles = {
     position: "fixed",
     inset: 0,
     background: "rgba(0,0,0,0.68)",
-    zIndex: .5,
+    zIndex: 0.5,
     pointerEvents: "none",
   },
   pageContent: {
@@ -409,17 +505,107 @@ const styles = {
   },
 };
 
-const inputStyle = { flex:1,padding:14,borderRadius:10,background:"#1a1a1a",color:"#aaa",border:"1px solid #222" };
-const filterBtn = { padding:"14px 18px",borderRadius:10,background:"#1a1a1a",color:"white",border:"1px solid #222",cursor:"pointer" };
-const dropdownStyle = { display:"flex",gap:12,marginBottom:25 };
-const dropdownInput = { padding:10,borderRadius:8,background:"#1a1a1a",color:"#aaa",border:"1px solid #222" };
-const gridStyle = { display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))",gap:30 };
-const cardStyle = { background:"#141414",borderRadius:18,overflow:"hidden",position:"relative" };
-const imgStyle = { width:"100%",aspectRatio:"2/3",objectFit:"cover",cursor:"pointer" };
-const overlayStyle = { position:"absolute",bottom:0,left:0,right:0,background:"rgba(0,0,0,0.85)",padding:12,display:"flex",flexDirection:"column",gap:8 };
-const overlayBtn = { background:"rgba(255,255,255,0.08)",border:"none",borderRadius:8,padding:8,color:"white",cursor:"pointer" };
-const starContainer = {background: "rgba(20,20,20,0.95)",border: "1px solid #222",borderRadius: 10,padding: 10,};
-const favBtn = (item)=>({ position:"absolute",top:10,right:10,background:"rgba(0,0,0,0.7)",border:"none",borderRadius:"50%",width:36,height:36,color:item?.favorite?"#ff4d6d":"white",cursor:"pointer" });
-const resetBtn = {padding: "10px 14px",borderRadius: 8,background: "rgba(255,255,255,0.08)",color: "#ff4d4d",border: "1px solid #333",cursor: "pointer",fontWeight: "bold",};
+const inputStyle = {
+  flex: 1,
+  padding: 14,
+  borderRadius: 10,
+  background: "#1a1a1a",
+  color: "#aaa",
+  border: "1px solid #222",
+};
+
+const filterBtn = {
+  padding: "14px 18px",
+  borderRadius: 10,
+  background: "#1a1a1a",
+  color: "white",
+  border: "1px solid #222",
+  cursor: "pointer",
+};
+
+const dropdownStyle = {
+  display: "flex",
+  gap: 12,
+  marginBottom: 25,
+};
+
+const dropdownInput = {
+  padding: 10,
+  borderRadius: 8,
+  background: "#1a1a1a",
+  color: "#aaa",
+  border: "1px solid #222",
+};
+
+const gridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
+  gap: 30,
+};
+
+const cardStyle = {
+  background: "#141414",
+  borderRadius: 18,
+  overflow: "hidden",
+  position: "relative",
+};
+
+const imgStyle = {
+  width: "100%",
+  aspectRatio: "2/3",
+  objectFit: "cover",
+  cursor: "pointer",
+};
+
+const overlayStyle = {
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  right: 0,
+  background: "rgba(0,0,0,0.85)",
+  padding: 12,
+  display: "flex",
+  flexDirection: "column",
+  gap: 8,
+};
+
+const overlayBtn = {
+  background: "rgba(255,255,255,0.08)",
+  border: "none",
+  borderRadius: 8,
+  padding: 8,
+  color: "white",
+  cursor: "pointer",
+};
+
+const starContainer = {
+  background: "rgba(20,20,20,0.95)",
+  border: "1px solid #222",
+  borderRadius: 10,
+  padding: 10,
+};
+
+const favBtn = (item) => ({
+  position: "absolute",
+  top: 10,
+  right: 10,
+  background: "rgba(0,0,0,0.7)",
+  border: "none",
+  borderRadius: "50%",
+  width: 36,
+  height: 36,
+  color: item?.favorite ? "#ff4d6d" : "white",
+  cursor: "pointer",
+});
+
+const resetBtn = {
+  padding: "10px 14px",
+  borderRadius: 8,
+  background: "rgba(255,255,255,0.08)",
+  color: "#ff4d4d",
+  border: "1px solid #333",
+  cursor: "pointer",
+  fontWeight: "bold",
+};
 
 export default WatchlistPage;
