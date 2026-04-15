@@ -18,6 +18,7 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [filterError, setFilterError] = useState("");
 
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedGenre, setSelectedGenre] = useState("");
@@ -25,6 +26,8 @@ export default function Navbar() {
 
   const navigate = useNavigate();
   const searchRef = useRef(null);
+
+  const activeError = filterError || searchError;
 
   const searchMovies = useCallback(async () => {
     const trimmed = searchQuery.trim();
@@ -150,7 +153,6 @@ export default function Navbar() {
       } else {
         setSearchResults([]);
         setShowDropdown(false);
-        setSearchError("");
       }
     }, 300);
 
@@ -179,6 +181,7 @@ export default function Navbar() {
     }
 
     setSearchError("");
+    setFilterError("");
     setShowDropdown(false);
     navigate(`/search?query=${encodeURIComponent(trimmedQuery)}`);
   };
@@ -192,10 +195,11 @@ export default function Navbar() {
       !selectedGenre;
 
     if (isAllSelected) {
-      setSearchError("Choose at least one filter.");
+      setFilterError("Choose at least one filter.");
       return;
     }
 
+    setFilterError("");
     setSearchError("");
 
     const params = new URLSearchParams();
@@ -253,6 +257,7 @@ export default function Navbar() {
                     onClick={() => {
                       setShowDropdown(false);
                       setSearchError("");
+                      setFilterError("");
                       navigate(`/movies/${movie.id}`);
                     }}
                   >
@@ -289,7 +294,7 @@ export default function Navbar() {
                       value={selectedCategory}
                       onChange={(e) => {
                         setSelectedCategory(e.target.value);
-                        setSearchError("");
+                        setFilterError("");
                       }}
                     >
                       <option value="All">All</option>
@@ -304,7 +309,7 @@ export default function Navbar() {
                       value={selectedYear}
                       onChange={(e) => {
                         setSelectedYear(e.target.value);
-                        setSearchError("");
+                        setFilterError("");
                       }}
                     >
                       <option value="">All Years</option>
@@ -322,7 +327,7 @@ export default function Navbar() {
                       value={selectedGenre}
                       onChange={(e) => {
                         setSelectedGenre(e.target.value);
-                        setSearchError("");
+                        setFilterError("");
                       }}
                     >
                       <option value="">All Genres</option>
@@ -348,7 +353,7 @@ export default function Navbar() {
 
               <Form.Control
                 type="text"
-                placeholder={searchError || "Search VMDB"}
+                placeholder={activeError || "Search VMDB"}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -356,7 +361,7 @@ export default function Navbar() {
                     setSearchError("");
                   }
                 }}
-                className={`vmdb-search-input ${searchError ? "error" : ""}`}
+                className={`vmdb-search-input ${activeError ? "error" : ""}`}
               />
 
               <Button type="submit" variant="light">

@@ -7,10 +7,12 @@ const MovieTrailer = ({ imdbID, title }) => {
 
   useEffect(() => {
     const fetchTrailer = async () => {
-      if (!imdbID) return;
+      if (!imdbID && !title) return;
 
       try {
-        const res = await axios.get(`http://localhost:8081/trailers/${imdbID}`);
+        const res = await axios.get(`http://localhost:8081/trailers/${imdbID || "unknown"}`, {
+          params: { title },
+        });
         setTrailer(res.data);
       } catch (error) {
         console.error("Error fetching trailer:", error);
@@ -20,7 +22,7 @@ const MovieTrailer = ({ imdbID, title }) => {
 
     fetchTrailer();
     setIsPlaying(false);
-  }, [imdbID]);
+  }, [imdbID, title]);
 
   if (!trailer || !trailer.youtubeId) {
     return (
@@ -45,7 +47,6 @@ const MovieTrailer = ({ imdbID, title }) => {
             allowFullScreen
           />
 
-          {/* ✅ FALLBACK LINK (THIS WAS MISSING) */}
           <div className="mt-3 text-center">
             <a
               href={youtubeUrl}
@@ -79,7 +80,6 @@ const MovieTrailer = ({ imdbID, title }) => {
             </div>
           </div>
 
-          {/* ✅ ALSO SHOW LINK BEFORE PLAY */}
           <div className="mt-3 text-center">
             <a
               href={youtubeUrl}

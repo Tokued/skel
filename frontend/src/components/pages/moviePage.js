@@ -17,7 +17,6 @@ const MoviePage = () => {
 
   const [watchlist, setWatchlist] = useState([]);
 
-  // ✨ EDIT MODAL STATE
   const [editingReview, setEditingReview] = useState(null);
   const [editRating, setEditRating] = useState(0);
   const [editText, setEditText] = useState("");
@@ -29,29 +28,37 @@ const MoviePage = () => {
   }, []);
 
   useEffect(() => {
-  const fetchMovie = async () => {
-    try {
-      // 1. Get your normal movie data first
-      const res = await axios.get(`http://localhost:8081/movies/${id}`);
-      const baseMovie = res.data;
+    const fetchMovie = async () => {
+      try {
+        const res = await axios.get(`http://localhost:8081/movies/${id}`);
+        const baseMovie = res.data;
 
-      // make sure the original page still gets something immediately
-      let mergedMovie = { ...baseMovie };
+        let mergedMovie = { ...baseMovie, tmdbPoster: null };
 
-      const missingPoster =
-        !baseMovie?.poster || baseMovie.poster === "N/A";
-      const missingPlot =
-        !baseMovie?.plot || baseMovie.plot === "N/A";
-
-      // 2. Only do TMDb fallback if poster or plot is missing
-      if (missingPoster || missingPlot) {
         try {
-          // find TMDb movie by IMDb id
+          let tmdbMovie = null;
+
           const findRes = await axios.get(
             `https://api.themoviedb.org/3/find/${id}?api_key=${TMDB_API_KEY}&external_source=imdb_id`
           );
 
-          const tmdbMovie = findRes.data?.movie_results?.[0];
+          tmdbMovie = findRes.data?.movie_results?.[0] || null;
+
+          if (!tmdbMovie && baseMovie?.title) {
+            const searchRes = await axios.get(
+              `https://api.themoviedb.org/3/search/movie`,
+              {
+                params: {
+                  api_key: TMDB_API_KEY,
+                  query: baseMovie.title,
+                  language: "en-US",
+                  page: 1,
+                },
+              }
+            );
+
+            tmdbMovie = searchRes.data?.results?.[0] || null;
+          }
 
           if (tmdbMovie) {
             const detailsRes = await axios.get(
@@ -59,56 +66,54 @@ const MoviePage = () => {
             );
 
             const tmdbDetails = detailsRes.data;
+            const tmdbPosterUrl = tmdbDetails?.poster_path
+              ? `${TMDB_IMAGE_BASE}${tmdbDetails.poster_path}`
+              : null;
+
+            const missingPoster = !baseMovie?.poster || baseMovie.poster === "N/A";
+            const missingPlot = !baseMovie?.plot || baseMovie.plot === "N/A";
 
             mergedMovie = {
               ...baseMovie,
-              // keep existing values if they are good
               title: baseMovie?.title || tmdbDetails?.title || "N/A",
-              poster:
-                !missingPoster
-                  ? baseMovie.poster
-                  : tmdbDetails?.poster_path
-                  ? `${TMDB_IMAGE_BASE}${tmdbDetails.poster_path}`
-                  : baseMovie.poster,
-              plot:
-                !missingPlot
-                  ? baseMovie.plot
-                  : tmdbDetails?.overview || "No description available.",
+              poster: !missingPoster ? baseMovie.poster : tmdbPosterUrl,
+              tmdbPoster: tmdbPosterUrl,
+              plot: !missingPlot
+                ? baseMovie.plot
+                : tmdbDetails?.overview || "No description available.",
             };
           }
         } catch (fallbackErr) {
           console.error("TMDb fallback error:", fallbackErr);
         }
+
+        setMovie(mergedMovie);
+      } catch (err) {
+        console.error("Error fetching movie:", err);
       }
+    };
 
-      setMovie(mergedMovie);
-    } catch (err) {
-      console.error("Error fetching movie:", err);
-    }
-  };
+    fetchMovie();
+  }, [id, TMDB_API_KEY, TMDB_IMAGE_BASE]);
 
-  fetchMovie();
-}, [id]);
+  useEffect(() => {
+    const fetchWatchlist = async () => {
+      if (!userId) return;
 
-   useEffect(() => {
-  const fetchWatchlist = async () => {
-    if (!userId) return;
+      try {
+        const res = await axios.get(
+          `http://localhost:8081/watchlist/${userId}`
+        );
 
-    try {
-      const res = await axios.get(
-        `http://localhost:8081/watchlist/${userId}`
-      );
+        setWatchlist(res.data);
+      } catch (err) {
+        console.error("Watchlist fetch error:", err);
+      }
+    };
 
-      setWatchlist(res.data);
-    } catch (err) {
-      console.error("Watchlist fetch error:", err);
-    }
-  };
+    if (userId) fetchWatchlist();
+  }, [userId, id]);
 
-  if (userId) fetchWatchlist();
-}, [userId, id]); // 👈 IMPORTANT FIX
-
-  // ✅ derived state (THIS FIXES YOUR BUG)
   const isAdded = watchlist.some((m) => m.movieId === id);
 
   const fetchReviews = useCallback(async () => {
@@ -128,45 +133,42 @@ const MoviePage = () => {
   }, [fetchReviews]);
 
   const toggleWatchlist = async () => {
-  if (!userId) return alert("You must be logged in");
-  if (!movie) return;
+    if (!userId) return alert("You must be logged in");
+    if (!movie) return;
 
-  try {
-    // optimistic UI update FIRST (instant toggle)
-    if (isAdded) {
-      setWatchlist((prev) =>
-        prev.filter((m) => m.movieId !== id)
+    try {
+      if (isAdded) {
+        setWatchlist((prev) =>
+          prev.filter((m) => m.movieId !== id)
+        );
+
+        await axios.delete(
+          `http://localhost:8081/watchlist/${userId}/${id}`
+        );
+      } else {
+        const newItem = {
+          userId,
+          movieId: movie.id,
+          title: movie.title,
+        };
+
+        setWatchlist((prev) => [...prev, newItem]);
+
+        await axios.post(
+          "http://localhost:8081/watchlist/add",
+          newItem
+        );
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Watchlist error");
+
+      const res = await axios.get(
+        `http://localhost:8081/watchlist/${userId}`
       );
-
-      await axios.delete(
-        `http://localhost:8081/watchlist/${userId}/${id}`
-      );
-    } else {
-      const newItem = {
-        userId,
-        movieId: movie.id,
-        title: movie.title,
-      };
-
-      setWatchlist((prev) => [...prev, newItem]);
-
-      await axios.post(
-        "http://localhost:8081/watchlist/add",
-        newItem
-      );
+      setWatchlist(res.data);
     }
-  } catch (err) {
-    alert(err.response?.data?.message || "Watchlist error");
+  };
 
-    // 🔥 rollback if error happens
-    const res = await axios.get(
-      `http://localhost:8081/watchlist/${userId}`
-    );
-    setWatchlist(res.data);
-  }
-};
-
-  // ⭐ STAR CLICK HANDLER
   const StarSelector = ({ value, setValue }) => {
     return (
       <div style={{ fontSize: "22px", cursor: "pointer" }}>
@@ -203,14 +205,12 @@ const MoviePage = () => {
     }
   };
 
-  // ✏️ OPEN EDIT MODAL
   const openEdit = (r) => {
     setEditingReview(r);
     setEditRating(r.rating);
     setEditText(r.reviewText);
   };
 
-  // 💾 SAVE EDIT
   const saveEdit = async () => {
     try {
       await axios.put(`http://localhost:8081/reviews/${editingReview._id}`, {
@@ -226,7 +226,6 @@ const MoviePage = () => {
     }
   };
 
-  // 🗑 DELETE
   const deleteReview = async (id) => {
     if (!window.confirm("Delete this review?")) return;
 
@@ -246,50 +245,60 @@ const MoviePage = () => {
   return (
     <div className="flex justify-center p-10 text-white">
       <div className="max-w-5xl w-full flex flex-col gap-8">
-
-        {/* MOVIE INFO */}
         <div className="bg-gray-900 p-8 rounded-lg">
           <h1 className="text-4xl font-bold text-center mb-8">{movie.title}</h1>
 
-        <div className="flex gap-8 items-stretch flex-wrap lg:flex-nowrap">
-          <div className="w-64 flex-shrink-0">
-            {movie.poster ? (
-              <img
-                src={movie.poster}
-                alt={movie.title}
-                className="w-64 h-[384px] object-cover rounded-lg"
-              />
-            ) : (
-              <div className="w-64 h-[384px] bg-gray-800 rounded-lg flex items-center justify-center text-gray-400">
-                No Image
-              </div>
-            )}
+          <div className="flex gap-8 items-stretch flex-wrap lg:flex-nowrap">
+            <div className="w-64 flex-shrink-0">
+              {movie.poster && movie.poster !== "N/A" ? (
+                <img
+                  src={movie.poster}
+                  alt={movie.title}
+                  className="w-64 h-[384px] object-cover rounded-lg"
+                  onError={(e) => {
+                    if (movie.tmdbPoster && e.currentTarget.src !== movie.tmdbPoster) {
+                      e.currentTarget.src = movie.tmdbPoster;
+                    } else {
+                      e.currentTarget.style.display = "none";
+                    }
+                  }}
+                />
+              ) : movie.tmdbPoster ? (
+                <img
+                  src={movie.tmdbPoster}
+                  alt={movie.title}
+                  className="w-64 h-[384px] object-cover rounded-lg"
+                />
+              ) : (
+                <div className="w-64 h-[384px] bg-gray-800 rounded-lg flex items-center justify-center text-gray-400">
+                  No Image
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 min-w-[300px] rounded-xl overflow-hidden border border-gray-700 shadow-2xl shadow-black/60 bg-black">
+              <MovieTrailer imdbID={movie.id} title={movie.title} />
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <p className="text-lg leading-8">{movie.plot}</p>
+
+            <div className="flex justify-center">
+              <button
+                onClick={toggleWatchlist}
+                className={`mt-6 px-6 py-3 rounded text-lg transition duration-200 ${
+                  isAdded
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-red-600 hover:bg-red-800"
+                }`}
+              >
+                {isAdded ? "Added ✓" : "Add to Watchlist"}
+              </button>
+            </div>
+          </div>
         </div>
 
-    <div className="flex-1 min-w-[300px] rounded-xl overflow-hidden border border-gray-700 shadow-2xl shadow-black/60 bg-black">
-      <MovieTrailer imdbID={movie.id} title={movie.title} />
-    </div>
-  </div>
-
-  <div className="mt-8">
-    <p className="text-lg leading-8">{movie.plot}</p>
-
-    <div className="flex justify-center">
-      <button
-        onClick={toggleWatchlist}
-       className={`mt-6 px-6 py-3 rounded text-lg transition duration-200 ${
-                isAdded
-                  ? "bg-green-600 hover:bg-green-700"
-                  : "bg-red-600 hover:bg-red-800"
-              }`}
-            >
-        {isAdded ? "Added ✓" : "Add to Watchlist"}
-      </button>
-    </div>
-  </div>
-</div>
-
-        {/* ADD REVIEW */}
         <div className="bg-gray-900 p-6 rounded-lg">
           <h2 className="text-2xl mb-3">Add Review</h2>
 
@@ -310,7 +319,6 @@ const MoviePage = () => {
           </button>
         </div>
 
-        {/* REVIEWS */}
         <div className="bg-gray-900 p-6 rounded-lg">
           <h2 className="text-2xl mb-4">Reviews</h2>
 
@@ -319,9 +327,7 @@ const MoviePage = () => {
               <div className="flex justify-between">
                 <strong>{r.userId?.username || "User"}</strong>
 
-                <div>
-                  {"⭐".repeat(r.rating)}
-                </div>
+                <div>{"⭐".repeat(r.rating)}</div>
               </div>
 
               <p className="mt-2">{r.reviewText}</p>
@@ -355,7 +361,6 @@ const MoviePage = () => {
         </div>
       </div>
 
-      {/* ✨ EDIT MODAL */}
       {editingReview && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center">
           <div className="bg-gray-900 p-6 rounded w-96">
