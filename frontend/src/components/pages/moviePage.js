@@ -14,6 +14,29 @@ const MoviePage = () => {
   const rowRef = useRef(null);
   const scrollAmount = 396;
 
+  const [movie, setMovie] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [movieError, setMovieError] = useState("");
+
+  const [reviews, setReviews] = useState([]);
+  const [rating, setRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+
+  const [watchlist, setWatchlist] = useState([]);
+
+  const [editingReview, setEditingReview] = useState(null);
+  const [editRating, setEditRating] = useState(0);
+  const [editText, setEditText] = useState("");
+
+  const [castIndex, setCastIndex] = useState(0);
+  const [showAllCrew, setShowAllCrew] = useState(false);
+
+  const [recommendations, setRecommendations] = useState([]);
+  const [tmdbMovieId, setTmdbMovieId] = useState(null);
+
+  const userId = user?.id || user?._id;
+
   const scrollLeft = () => {
     const row = rowRef.current;
     if (!row) return;
@@ -40,29 +63,6 @@ const MoviePage = () => {
       row.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
   };
-
-  const [movie, setMovie] = useState(null);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [movieError, setMovieError] = useState("");
-
-  const [reviews, setReviews] = useState([]);
-  const [rating, setRating] = useState(0);
-  const [reviewText, setReviewText] = useState("");
-
-  const [watchlist, setWatchlist] = useState([]);
-
-  const [editingReview, setEditingReview] = useState(null);
-  const [editRating, setEditRating] = useState(0);
-  const [editText, setEditText] = useState("");
-
-  const [castIndex, setCastIndex] = useState(0);
-  const [showAllCrew, setShowAllCrew] = useState(false);
-
-  const [recommendations, setRecommendations] = useState([]);
-  const [tmdbMovieId, setTmdbMovieId] = useState(null);
-
-  const userId = user?.id || user?._id;
 
   useEffect(() => {
     setUser(getUserInfo());
@@ -212,7 +212,6 @@ const MoviePage = () => {
   const fetchReviews = useCallback(async () => {
     try {
       const res = await axios.get(`http://localhost:8081/reviews/movie/${id}`);
-      console.log("Reviews response:", res.data.reviews);
       setReviews(res.data.reviews || []);
     } catch (err) {
       console.error("Error fetching reviews:", err);
@@ -306,11 +305,11 @@ const MoviePage = () => {
     }
   };
 
-  const deleteReview = async (id) => {
+  const deleteReview = async (reviewId) => {
     if (!window.confirm("Delete this review?")) return;
 
     try {
-      await axios.delete(`http://localhost:8081/reviews/${id}`, {
+      await axios.delete(`http://localhost:8081/reviews/${reviewId}`, {
         data: { userId },
       });
 
@@ -666,14 +665,14 @@ const MoviePage = () => {
                     <div className="relative overflow-hidden rounded-2xl shadow-xl transform transition duration-300 group-hover/card:scale-105">
                       <img
                         src={`${TMDB_IMAGE_BASE}${rec.poster_path}`}
-                        alt={rec.title}
+                        alt={rec.title || "Recommended movie"}
                         className="w-full h-[300px] object-cover"
                       />
 
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition" />
 
                       <div className="absolute bottom-0 p-3 opacity-0 group-hover/card:opacity-100 transition">
-                        <p className="text-sm font-semibold leading-tight">
+                        <p className="text-sm font-semibold leading-tight text-white">
                           {rec.title}
                         </p>
                       </div>
