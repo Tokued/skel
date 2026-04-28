@@ -23,11 +23,9 @@ const RecommendationsRow = ({
       setLoading(true);
 
       try {
-        const endpoint =
-          mediaType === "tv" ? "recommendations" : "similar";
-
+        // Use "recommendations" for both movie and tv — matches MoviePage behavior
         const res = await axios.get(
-          `https://api.themoviedb.org/3/${mediaType}/${mostRecentMovieTmdbId}/${endpoint}`,
+          `https://api.themoviedb.org/3/${mediaType}/${mostRecentMovieTmdbId}/recommendations`,
           {
             params: {
               api_key: TMDB_API_KEY,
@@ -38,15 +36,11 @@ const RecommendationsRow = ({
         );
 
         const mapped = (res.data?.results || [])
-          .slice(0, 20)
+          .slice(0, 12)
           .map((item) => ({
             id: item.id,
             tmdbId: item.id,
             title: item.title || item.name,
-            year:
-              mediaType === "movie"
-                ? item.release_date?.slice(0, 4) || "N/A"
-                : item.first_air_date?.slice(0, 4) || "N/A",
             poster: item.poster_path
               ? `${TMDB_IMAGE_BASE}${item.poster_path}`
               : null,
@@ -64,21 +58,14 @@ const RecommendationsRow = ({
     fetchRecommendations();
   }, [mostRecentMovieTmdbId, mediaType]);
 
-  // simple + stable scrolling (no edge bugs)
   const scrollAmount = 400;
 
   const scrollLeft = () => {
-    rowRef.current?.scrollBy({
-      left: -scrollAmount,
-      behavior: "smooth",
-    });
+    rowRef.current?.scrollBy({ left: -scrollAmount, behavior: "smooth" });
   };
 
   const scrollRight = () => {
-    rowRef.current?.scrollBy({
-      left: scrollAmount,
-      behavior: "smooth",
-    });
+    rowRef.current?.scrollBy({ left: scrollAmount, behavior: "smooth" });
   };
 
   const handleMovieClick = (item) => {
@@ -89,9 +76,7 @@ const RecommendationsRow = ({
 
   return (
     <div style={styles.section}>
-      <h2 style={styles.heading}>
-        Because you watched {watchedMovieTitle}
-      </h2>
+      <h2 style={styles.heading}>Because you watched {watchedMovieTitle}</h2>
 
       {loading && (
         <p style={{ color: "#aaa", marginBottom: "10px" }}>
@@ -105,34 +90,28 @@ const RecommendationsRow = ({
         </button>
 
         <div ref={rowRef} style={styles.scrollRow}>
-          {recommendations.map((item) => (
+          {recommendations.map((rec) => (
             <div
-              key={item.id}
+              key={rec.id}
               style={styles.movieCard}
-              onClick={() => handleMovieClick(item)}
+              onClick={() => handleMovieClick(rec)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "scale(1.05)";
-                e.currentTarget.style.boxShadow =
-                  "0 8px 20px rgba(0,0,0,0.4)";
+                e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.4)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "scale(1)";
                 e.currentTarget.style.boxShadow = "none";
               }}
             >
-              {item.poster ? (
-                <img
-                  src={item.poster}
-                  alt={item.title}
-                  style={styles.poster}
-                />
+              {rec.poster ? (
+                <img src={rec.poster} alt={rec.title} style={styles.poster} />
               ) : (
                 <div style={styles.noPoster}>No Image</div>
               )}
 
               <div style={styles.cardContent}>
-                <h4 style={styles.movieTitle}>{item.title}</h4>
-                <p style={styles.year}>{item.year}</p>
+                <h4 style={styles.movieTitle}>{rec.title}</h4>
               </div>
             </div>
           ))}
@@ -211,11 +190,6 @@ const styles = {
     fontSize: "16px",
     marginBottom: "6px",
     color: "#fff",
-  },
-
-  year: {
-    fontSize: "13px",
-    color: "#aaa",
   },
 
   arrowButtonLeft: {

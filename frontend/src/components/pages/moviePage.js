@@ -320,6 +320,13 @@ const MoviePage = () => {
 
   return (
     <div className="flex justify-center p-10 text-white">
+      {/* Scoped style to guarantee scrollbar is hidden regardless of CSS module scoping */}
+      <style>{`
+        .recommendations-scroll::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
       <div className="max-w-5xl w-full flex flex-col gap-8">
         <div className="bg-gray-900 p-8 rounded-lg">
           <h1 className="text-4xl font-bold text-center mb-8">{movie.title}</h1>
@@ -433,81 +440,82 @@ const MoviePage = () => {
               )}
             </div>
           ))}
-
-          
         </div>
 
         {/* RECOMMENDATIONS */}
-{recommendations.length > 0 && (
-  <div className="space-y-6">
-    {/* HEADER */}
-    <div className="flex items-center justify-between">
-      <h2 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
-        You Might Also Like
-      </h2>
-    </div>
+        {recommendations.length > 0 && (
+          <div className="space-y-6">
+            {/* HEADER */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
+                You Might Also Like
+              </h2>
+            </div>
 
-    <div className="relative group">
-      {/* LEFT FADE */}
-      <div className="absolute left-0 top-0 h-full w-20 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+            <div className="relative group">
+              {/* LEFT FADE */}
+              <div className="absolute left-0 top-0 h-full w-20 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
 
-      {/* RIGHT FADE */}
-      <div className="absolute right-0 top-0 h-full w-20 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+              {/* RIGHT FADE */}
+              <div className="absolute right-0 top-0 h-full w-20 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
 
-      {/* LEFT BUTTON */}
-      <button
-        onClick={scrollLeft}
-        className="opacity-0 group-hover:opacity-100 transition absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-black/70 hover:bg-black p-3 rounded-full shadow-lg backdrop-blur"
-      >
-        ‹
-      </button>
+              {/* LEFT BUTTON */}
+              <button
+                onClick={scrollLeft}
+                className="opacity-0 group-hover:opacity-100 transition absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-black/70 hover:bg-black p-3 rounded-full shadow-lg backdrop-blur"
+              >
+                ‹
+              </button>
 
-      {/* SCROLL ROW */}
-      <div
-        ref={rowRef}
-        className="flex gap-6 overflow-x-auto no-scrollbar scroll-smooth px-8 snap-x snap-mandatory"
-      >
-        {recommendations.map((rec) => (
-          <div
-            key={rec.id}
-            onClick={() => navigate(`/movies/${rec.id}`)}
-            className="relative flex-shrink-0 w-52 cursor-pointer group/card snap-start"
-          >
-            {/* CARD */}
-            <div className="relative overflow-hidden rounded-2xl shadow-xl transform transition duration-300 group-hover/card:scale-105">
-              
-              {/* IMAGE */}
-              <img
-                src={`${TMDB_IMAGE_BASE}${rec.poster_path}`}
-                alt={rec.title}
-                className="w-full h-[300px] object-cover"
-              />
+              {/* SCROLL ROW */}
+              <div
+                ref={rowRef}
+                className="recommendations-scroll flex gap-6 overflow-x-auto scroll-smooth px-8 snap-x snap-mandatory"
+                style={{
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                }}
+              >
+                {recommendations.map((rec) => (
+                  <div
+                    key={rec.id}
+                    onClick={() => navigate(`/movies/${rec.id}`)}
+                    className="relative flex-shrink-0 w-52 cursor-pointer group/card snap-start"
+                  >
+                    {/* CARD */}
+                    <div className="relative overflow-hidden rounded-2xl shadow-xl transform transition duration-300 group-hover/card:scale-105">
 
-              {/* OVERLAY */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition" />
+                      {/* IMAGE */}
+                      <img
+                        src={`${TMDB_IMAGE_BASE}${rec.poster_path}`}
+                        alt={rec.title}
+                        className="w-full h-[300px] object-cover"
+                      />
 
-              {/* TITLE */}
-              <div className="absolute bottom-0 p-3 opacity-0 group-hover/card:opacity-100 transition">
-                <p className="text-sm font-semibold leading-tight">
-                  {rec.title}
-                </p>
+                      {/* OVERLAY */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition" />
+
+                      {/* TITLE */}
+                      <div className="absolute bottom-0 p-3 opacity-0 group-hover/card:opacity-100 transition">
+                        <p className="text-sm font-semibold leading-tight">
+                          {rec.title}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
+
+              {/* RIGHT BUTTON */}
+              <button
+                onClick={scrollRight}
+                className="opacity-0 group-hover:opacity-100 transition absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/70 hover:bg-black p-3 rounded-full shadow-lg backdrop-blur"
+              >
+                ›
+              </button>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* RIGHT BUTTON */}
-      <button
-        onClick={scrollRight}
-        className="opacity-0 group-hover:opacity-100 transition absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/70 hover:bg-black p-3 rounded-full shadow-lg backdrop-blur"
-      >
-        ›
-      </button>
-    </div>
-  </div>
-)}
-
+        )}
       </div>
 
       {editingReview && (
@@ -541,10 +549,7 @@ const MoviePage = () => {
           </div>
         </div>
       )}
-      
-      
     </div>
-    
   );
 };
 
