@@ -172,25 +172,46 @@ const MoviePage = () => {
     fetchMovie();
   }, [id, TMDB_API_KEY]);
 
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      if (!tmdbMovieId) return;
+      useEffect(() => {
+        const fetchRecommendations = async () => {
+          if (!tmdbMovieId) return;
 
-      try {
-        const res = await axios.get(
-          `https://api.themoviedb.org/3/movie/${tmdbMovieId}/recommendations?api_key=${TMDB_API_KEY}`
-        );
+          try {
+            const res = await axios.get(
+              `https://api.themoviedb.org/3/movie/${tmdbMovieId}/recommendations?api_key=${TMDB_API_KEY}`
+            );
 
-        setRecommendations(
-          res.data.results?.filter((rec) => rec.poster_path).slice(0, 12) || []
-        );
-      } catch (err) {
-        console.error("Error fetching recommendations:", err);
-      }
-    };
+            const recsWithImdb = await Promise.all(
+              (res.data.results || [])
+                .filter((rec) => rec.poster_path)
+                .slice(0, 12)
+                .map(async (rec) => {
+                  try {
+                    const externalRes = await axios.get(
+                      `https://api.themoviedb.org/3/movie/${rec.id}/external_ids?api_key=${TMDB_API_KEY}`
+                    );
 
-    fetchRecommendations();
-  }, [tmdbMovieId, TMDB_API_KEY]);
+                    return {
+                      ...rec,
+                      imdb_id: externalRes.data.imdb_id,
+                    };
+                  } catch {
+                    return {
+                      ...rec,
+                      imdb_id: null,
+                    };
+                  }
+                })
+            );
+
+            setRecommendations(recsWithImdb.filter((rec) => rec.imdb_id));
+          } catch (err) {
+            console.error("Error fetching recommendations:", err);
+          }
+        };
+
+        fetchRecommendations();
+      }, [tmdbMovieId, TMDB_API_KEY]);
 
   useEffect(() => {
     const fetchWatchlist = async () => {
@@ -629,67 +650,56 @@ const MoviePage = () => {
           ))}
         </div>
 
-        {recommendations.length > 0 && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
+          {recommendations.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-3xl font-bold text-white">
                 You Might Also Like
               </h2>
-            </div>
 
-            <div className="relative group">
-              <div className="absolute left-0 top-0 h-full w-20 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
-              <div className="absolute right-0 top-0 h-full w-20 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+              <div className="relative">
+                <button
+                  onClick={scrollLeft}
+                  className="absolute left-2 top-[135px] z-20 bg-black/80 hover:bg-black w-10 h-10 rounded-full text-white text-2xl flex items-center justify-center"
+                >
+                  ‹
+                </button>
 
-              <button
-                onClick={scrollLeft}
-                className="opacity-0 group-hover:opacity-100 transition absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-black/70 hover:bg-black p-3 rounded-full shadow-lg backdrop-blur"
-              >
-                ‹
-              </button>
-
-              <div
-                ref={rowRef}
-                className="recommendations-scroll flex gap-6 overflow-x-auto scroll-smooth px-8 snap-x snap-mandatory"
-                style={{
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
-                }}
-              >
-                {recommendations.map((rec) => (
-                  <div
-                    key={rec.id}
-                    onClick={() => navigate(`/movies/${rec.id}`)}
-                    className="relative flex-shrink-0 w-52 cursor-pointer group/card snap-start"
-                  >
-                    <div className="relative overflow-hidden rounded-2xl shadow-xl transform transition duration-300 group-hover/card:scale-105">
+                <div
+                  ref={rowRef}
+                  className="recommendations-scroll flex gap-6 overflow-x-auto scroll-smooth px-14 pb-4"
+                  style={{
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                  }}
+                >
+                  {recommendations.map((rec) => (
+                    <div
+                      key={rec.id}
+                      onClick={() => navigate(`/movies/${rec.imdb_id}`)}
+                      className="flex-shrink-0 w-52 cursor-pointer"
+                    >
                       <img
                         src={`${TMDB_IMAGE_BASE}${rec.poster_path}`}
                         alt={rec.title || "Recommended movie"}
-                        className="w-full h-[300px] object-cover"
+                        className="w-full h-[300px] object-cover rounded-2xl shadow-xl hover:scale-105 transition"
                       />
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition" />
-
-                      <div className="absolute bottom-0 p-3 opacity-0 group-hover/card:opacity-100 transition">
-                        <p className="text-sm font-semibold leading-tight text-white">
-                          {rec.title}
-                        </p>
-                      </div>
+                      <p className="mt-2 text-sm font-semibold text-white leading-tight">
+                        {rec.title}
+                      </p>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <button
-                onClick={scrollRight}
-                className="opacity-0 group-hover:opacity-100 transition absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/70 hover:bg-black p-3 rounded-full shadow-lg backdrop-blur"
-              >
-                ›
-              </button>
+                <button
+                  onClick={scrollRight}
+                  className="absolute right-2 top-[135px] z-20 bg-black/80 hover:bg-black w-10 h-10 rounded-full text-white text-2xl flex items-center justify-center"
+                >
+                  ›
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
 
       {editingReview && (
