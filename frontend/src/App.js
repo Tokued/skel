@@ -18,6 +18,7 @@ import SearchResultsPage from "./components/pages/searchResultsPage";
 import AdminDashboard from "./components/pages/AdminDashboard";
 import FavoritesPage from "./components/pages/FavoritesPage";
 import ReviewsPage from "./components/pages/ReviewsPage";
+import PersonPage from "./components/pages/personPage";
 
 
 export const UserContext = createContext();
@@ -45,6 +46,7 @@ const App = () => {
           <Route path="/admin" element={<AdminDashboard />} /> 
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
+          <Route path="/person/:personId" element={<PersonPage />} />
 
           {/* ✅ FIXED: pass movie ID into Reviews */}
           <Route path="/reviews/:id" element={<Reviews />} />

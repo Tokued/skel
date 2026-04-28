@@ -1,13 +1,45 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
 import MovieTrailer from "../MovieTrailer";
 
 const MoviePage = () => {
+  const navigate = useNavigate();
   const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
   const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
+  const TMDB_PROFILE_BASE = "https://image.tmdb.org/t/p/w342";
   const { id } = useParams();
+
+  const rowRef = useRef(null);
+  const scrollAmount = 396;
+
+  const scrollLeft = () => {
+    const row = rowRef.current;
+    if (!row) return;
+
+    if (row.scrollLeft <= 10) {
+      row.scrollTo({
+        left: row.scrollWidth - row.clientWidth,
+        behavior: "smooth",
+      });
+    } else {
+      row.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+    }
+  };
+
+  const scrollRight = () => {
+    const row = rowRef.current;
+    if (!row) return;
+
+    const maxScrollLeft = row.scrollWidth - row.clientWidth;
+
+    if (row.scrollLeft >= maxScrollLeft - 10) {
+      row.scrollTo({ left: 0, behavior: "smooth" });
+    } else {
+      row.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
 
   const [movie, setMovie] = useState(null);
   const [user, setUser] = useState(null);
@@ -24,6 +56,12 @@ const MoviePage = () => {
   const [editRating, setEditRating] = useState(0);
   const [editText, setEditText] = useState("");
 
+  const [castIndex, setCastIndex] = useState(0);
+  const [showAllCrew, setShowAllCrew] = useState(false);
+
+  const [recommendations, setRecommendations] = useState([]);
+  const [tmdbMovieId, setTmdbMovieId] = useState(null);
+
   const userId = user?.id || user?._id;
 
   useEffect(() => {
@@ -31,16 +69,29 @@ const MoviePage = () => {
   }, []);
 
   useEffect(() => {
+    setCastIndex(0);
+    setShowAllCrew(false);
+    setRecommendations([]);
+    setTmdbMovieId(null);
+  }, [id]);
+
+  useEffect(() => {
     const fetchMovie = async () => {
       setLoading(true);
       setMovieError("");
       setMovie(null);
+      setTmdbMovieId(null);
 
       try {
         const res = await axios.get(`http://localhost:8081/movies/${id}`);
         const baseMovie = res.data;
 
-        let mergedMovie = { ...baseMovie, tmdbPoster: null };
+        let mergedMovie = {
+          ...baseMovie,
+          tmdbPoster: null,
+          cast: [],
+          crew: [],
+        };
 
         try {
           let tmdbMovie = null;
@@ -68,11 +119,19 @@ const MoviePage = () => {
           }
 
           if (tmdbMovie) {
+            setTmdbMovieId(tmdbMovie.id);
+
             const detailsRes = await axios.get(
               `https://api.themoviedb.org/3/movie/${tmdbMovie.id}?api_key=${TMDB_API_KEY}`
             );
 
+            const creditsRes = await axios.get(
+              `https://api.themoviedb.org/3/movie/${tmdbMovie.id}/credits?api_key=${TMDB_API_KEY}`
+            );
+
             const tmdbDetails = detailsRes.data;
+            const tmdbCredits = creditsRes.data;
+
             const tmdbPosterUrl = tmdbDetails?.poster_path
               ? `${TMDB_IMAGE_BASE}${tmdbDetails.poster_path}`
               : null;
@@ -88,6 +147,8 @@ const MoviePage = () => {
               plot: !missingPlot
                 ? baseMovie.plot
                 : tmdbDetails?.overview || "No description available.",
+              cast: tmdbCredits?.cast?.slice(0, 20) || [],
+              crew: tmdbCredits?.crew || [],
             };
           }
         } catch (fallbackErr) {
@@ -110,6 +171,26 @@ const MoviePage = () => {
 
     fetchMovie();
   }, [id, TMDB_API_KEY]);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!tmdbMovieId) return;
+
+      try {
+        const res = await axios.get(
+          `https://api.themoviedb.org/3/movie/${tmdbMovieId}/recommendations?api_key=${TMDB_API_KEY}`
+        );
+
+        setRecommendations(
+          res.data.results?.filter((rec) => rec.poster_path).slice(0, 12) || []
+        );
+      } catch (err) {
+        console.error("Error fetching recommendations:", err);
+      }
+    };
+
+    fetchRecommendations();
+  }, [tmdbMovieId, TMDB_API_KEY]);
 
   useEffect(() => {
     const fetchWatchlist = async () => {
@@ -149,7 +230,6 @@ const MoviePage = () => {
     try {
       if (isAdded) {
         setWatchlist((prev) => prev.filter((m) => m.movieId !== id));
-
         await axios.delete(`http://localhost:8081/watchlist/${userId}/${id}`);
       } else {
         const newItem = {
@@ -159,7 +239,6 @@ const MoviePage = () => {
         };
 
         setWatchlist((prev) => [...prev, newItem]);
-
         await axios.post("http://localhost:8081/watchlist/add", newItem);
       }
     } catch (err) {
@@ -267,8 +346,80 @@ const MoviePage = () => {
     );
   }
 
+  const crewRoleLabels = {
+    Director: "Director",
+    Writer: "Writers",
+    Screenplay: "Screenplay",
+    Story: "Story",
+    Producer: "Producers",
+    "Executive Producer": "Executive Producers",
+    "Director of Photography": "Cinematography",
+    Editor: "Editors",
+    "Original Music Composer": "Music",
+    Casting: "Casting",
+  };
+
+  const priorityOrder = [
+    "Director",
+    "Writer",
+    "Screenplay",
+    "Story",
+    "Producer",
+    "Executive Producer",
+    "Director of Photography",
+    "Editor",
+    "Original Music Composer",
+    "Casting",
+  ];
+
+  const compactLimits = {
+    Director: 2,
+    Writer: 2,
+    Screenplay: 2,
+    Story: 2,
+    Producer: 3,
+    "Executive Producer": 2,
+    "Director of Photography": 1,
+    Editor: 2,
+    "Original Music Composer": 1,
+    Casting: 2,
+  };
+
+  const groupedCrew = priorityOrder
+    .map((job) => {
+      const people =
+        movie.crew
+          ?.filter((person) => person.job === job)
+          ?.filter(
+            (person, index, self) =>
+              index === self.findIndex((p) => p.name === person.name)
+          ) || [];
+
+      const visiblePeople = showAllCrew
+        ? people
+        : people.slice(0, compactLimits[job] || 1);
+
+      return {
+        job,
+        label: crewRoleLabels[job] || job,
+        people: visiblePeople,
+        total: people.length,
+      };
+    })
+    .filter((group) => group.people.length > 0);
+
+  const hasHiddenCrew = groupedCrew.some(
+    (group) => group.total > group.people.length
+  );
+
   return (
     <div className="flex justify-center p-10 text-white">
+      <style>{`
+        .recommendations-scroll::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
       <div className="max-w-5xl w-full flex flex-col gap-8">
         <div className="bg-gray-900 p-8 rounded-lg">
           <h1 className="text-4xl font-bold text-center mb-8">{movie.title}</h1>
@@ -309,10 +460,10 @@ const MoviePage = () => {
           <div className="mt-8">
             <p className="text-lg leading-8">{movie.plot}</p>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-6">
               <button
                 onClick={toggleWatchlist}
-                className={`mt-6 px-6 py-3 rounded text-lg transition duration-200 ${
+                className={`px-6 py-3 rounded text-lg transition duration-200 ${
                   isAdded
                     ? "bg-green-600 hover:bg-green-700"
                     : "bg-red-600 hover:bg-red-800"
@@ -321,6 +472,101 @@ const MoviePage = () => {
                 {isAdded ? "Added ✓" : "Add to Watchlist"}
               </button>
             </div>
+
+            {(movie.cast?.length > 0 || movie.crew?.length > 0) && (
+              <div className="mt-8">
+                {movie.cast?.length > 0 && (
+                  <div className="relative">
+                    <h2 className="text-2xl font-bold mb-4">Cast</h2>
+
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => setCastIndex((prev) => Math.max(prev - 1, 0))}
+                        disabled={castIndex === 0}
+                        className="bg-black/70 hover:bg-black px-3 py-2 rounded-full disabled:opacity-30"
+                      >
+                        ‹
+                      </button>
+
+                      <div className="flex gap-4 overflow-hidden flex-1">
+                        {movie.cast.slice(castIndex, castIndex + 5).map((actor) => (
+                          <div
+                            key={actor.id}
+                            onClick={() => navigate(`/person/${actor.id}`)}
+                            className="bg-gray-800 rounded-lg overflow-hidden text-center min-w-[140px] max-w-[140px] cursor-pointer hover:scale-105 transition"
+                          >
+                            {actor.profile_path ? (
+                              <img
+                                src={`${TMDB_PROFILE_BASE}${actor.profile_path}`}
+                                alt={actor.name}
+                                className="w-full h-40 object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-40 bg-gray-700 flex items-center justify-center text-gray-400 text-sm">
+                                No Image
+                              </div>
+                            )}
+
+                            <div className="p-2">
+                              <p className="font-bold text-sm leading-tight">
+                                {actor.name}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1 leading-tight">
+                                {actor.character || "Character unavailable"}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() =>
+                          setCastIndex((prev) =>
+                            Math.min(prev + 1, Math.max(movie.cast.length - 5, 0))
+                          )
+                        }
+                        disabled={castIndex >= movie.cast.length - 5}
+                        className="bg-black/70 hover:bg-black px-3 py-2 rounded-full disabled:opacity-30"
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {movie.crew?.length > 0 && (
+                  <div className="mt-8 bg-gray-800 rounded-lg p-4">
+                    <h2 className="text-2xl font-bold mb-3">Crew</h2>
+
+                    {groupedCrew.length > 0 ? (
+                      groupedCrew.map((group) => (
+                        <p key={group.job} className="mb-2">
+                          <strong>{group.label}:</strong>{" "}
+                          {group.people.map((person) => person.name).join(", ")}
+                          {!showAllCrew && group.total > group.people.length && (
+                            <span className="text-gray-400">
+                              {" "}
+                              +{group.total - group.people.length} more
+                            </span>
+                          )}
+                        </p>
+                      ))
+                    ) : (
+                      <p>No crew information available.</p>
+                    )}
+
+                    {hasHiddenCrew && (
+                      <button
+                        onClick={() => setShowAllCrew(!showAllCrew)}
+                        className="mt-3 bg-green-600 hover:bg-green-700 px-4 py-2 rounded"
+                      >
+                        {showAllCrew ? "Show Less" : "Show More"}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -383,6 +629,68 @@ const MoviePage = () => {
             </div>
           ))}
         </div>
+
+        {recommendations.length > 0 && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
+                You Might Also Like
+              </h2>
+            </div>
+
+            <div className="relative group">
+              <div className="absolute left-0 top-0 h-full w-20 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 h-full w-20 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+
+              <button
+                onClick={scrollLeft}
+                className="opacity-0 group-hover:opacity-100 transition absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-black/70 hover:bg-black p-3 rounded-full shadow-lg backdrop-blur"
+              >
+                ‹
+              </button>
+
+              <div
+                ref={rowRef}
+                className="recommendations-scroll flex gap-6 overflow-x-auto scroll-smooth px-8 snap-x snap-mandatory"
+                style={{
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                }}
+              >
+                {recommendations.map((rec) => (
+                  <div
+                    key={rec.id}
+                    onClick={() => navigate(`/movies/${rec.id}`)}
+                    className="relative flex-shrink-0 w-52 cursor-pointer group/card snap-start"
+                  >
+                    <div className="relative overflow-hidden rounded-2xl shadow-xl transform transition duration-300 group-hover/card:scale-105">
+                      <img
+                        src={`${TMDB_IMAGE_BASE}${rec.poster_path}`}
+                        alt={rec.title}
+                        className="w-full h-[300px] object-cover"
+                      />
+
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover/card:opacity-100 transition" />
+
+                      <div className="absolute bottom-0 p-3 opacity-0 group-hover/card:opacity-100 transition">
+                        <p className="text-sm font-semibold leading-tight">
+                          {rec.title}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={scrollRight}
+                className="opacity-0 group-hover:opacity-100 transition absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/70 hover:bg-black p-3 rounded-full shadow-lg backdrop-blur"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {editingReview && (
