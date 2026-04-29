@@ -9,6 +9,7 @@ const MoviePage = () => {
   const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
   const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
   const TMDB_PROFILE_BASE = "https://image.tmdb.org/t/p/w342";
+  const TMDB_BACKDROP_BASE = "https://image.tmdb.org/t/p/original";
   const { id } = useParams();
 
   const rowRef = useRef(null);
@@ -89,6 +90,7 @@ const MoviePage = () => {
         let mergedMovie = {
           ...baseMovie,
           tmdbPoster: null,
+          backdrop: null,
           cast: [],
           crew: [],
         };
@@ -136,6 +138,10 @@ const MoviePage = () => {
               ? `${TMDB_IMAGE_BASE}${tmdbDetails.poster_path}`
               : null;
 
+            const backdropUrl = tmdbDetails?.backdrop_path
+              ? `${TMDB_BACKDROP_BASE}${tmdbDetails.backdrop_path}`
+              : tmdbPosterUrl;
+
             const missingPoster = !baseMovie?.poster || baseMovie.poster === "N/A";
             const missingPlot = !baseMovie?.plot || baseMovie.plot === "N/A";
 
@@ -144,9 +150,16 @@ const MoviePage = () => {
               title: baseMovie?.title || tmdbDetails?.title || "N/A",
               poster: !missingPoster ? baseMovie.poster : tmdbPosterUrl,
               tmdbPoster: tmdbPosterUrl,
+              backdrop: backdropUrl,
               plot: !missingPlot
                 ? baseMovie.plot
                 : tmdbDetails?.overview || "No description available.",
+              year:
+                baseMovie?.year ||
+                tmdbDetails?.release_date?.slice(0, 4) ||
+                "N/A",
+              runtime: baseMovie?.runtime || `${tmdbDetails?.runtime || "N/A"} min`,
+              rating: baseMovie?.rated || baseMovie?.rating || "Movie",
               cast: tmdbCredits?.cast?.slice(0, 20) || [],
               crew: tmdbCredits?.crew || [],
             };
@@ -172,46 +185,46 @@ const MoviePage = () => {
     fetchMovie();
   }, [id, TMDB_API_KEY]);
 
-      useEffect(() => {
-        const fetchRecommendations = async () => {
-          if (!tmdbMovieId) return;
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!tmdbMovieId) return;
 
-          try {
-            const res = await axios.get(
-              `https://api.themoviedb.org/3/movie/${tmdbMovieId}/recommendations?api_key=${TMDB_API_KEY}`
-            );
+      try {
+        const res = await axios.get(
+          `https://api.themoviedb.org/3/movie/${tmdbMovieId}/recommendations?api_key=${TMDB_API_KEY}`
+        );
 
-            const recsWithImdb = await Promise.all(
-              (res.data.results || [])
-                .filter((rec) => rec.poster_path)
-                .slice(0, 12)
-                .map(async (rec) => {
-                  try {
-                    const externalRes = await axios.get(
-                      `https://api.themoviedb.org/3/movie/${rec.id}/external_ids?api_key=${TMDB_API_KEY}`
-                    );
+        const recsWithImdb = await Promise.all(
+          (res.data.results || [])
+            .filter((rec) => rec.poster_path)
+            .slice(0, 12)
+            .map(async (rec) => {
+              try {
+                const externalRes = await axios.get(
+                  `https://api.themoviedb.org/3/movie/${rec.id}/external_ids?api_key=${TMDB_API_KEY}`
+                );
 
-                    return {
-                      ...rec,
-                      imdb_id: externalRes.data.imdb_id,
-                    };
-                  } catch {
-                    return {
-                      ...rec,
-                      imdb_id: null,
-                    };
-                  }
-                })
-            );
+                return {
+                  ...rec,
+                  imdb_id: externalRes.data.imdb_id,
+                };
+              } catch {
+                return {
+                  ...rec,
+                  imdb_id: null,
+                };
+              }
+            })
+        );
 
-            setRecommendations(recsWithImdb.filter((rec) => rec.imdb_id));
-          } catch (err) {
-            console.error("Error fetching recommendations:", err);
-          }
-        };
+        setRecommendations(recsWithImdb.filter((rec) => rec.imdb_id));
+      } catch (err) {
+        console.error("Error fetching recommendations:", err);
+      }
+    };
 
-        fetchRecommendations();
-      }, [tmdbMovieId, TMDB_API_KEY]);
+    fetchRecommendations();
+  }, [tmdbMovieId, TMDB_API_KEY]);
 
   useEffect(() => {
     const fetchWatchlist = async () => {
@@ -433,57 +446,86 @@ const MoviePage = () => {
   );
 
   return (
-    <div className="flex justify-center p-10 text-white">
+    <div className="relative min-h-screen overflow-hidden bg-black text-white">
+      {movie.backdrop && (
+        <div
+          className="fixed inset-0 bg-cover bg-center opacity-30 blur-sm scale-105"
+          style={{ backgroundImage: `url(${movie.backdrop})` }}
+        />
+      )}
+
+      <div className="fixed inset-0 bg-gradient-to-b from-black/80 via-black/80 to-black" />
+
       <style>{`
         .recommendations-scroll::-webkit-scrollbar {
           display: none;
         }
       `}</style>
 
-      <div className="max-w-5xl w-full flex flex-col gap-8">
-        <div className="bg-gray-900 p-8 rounded-lg">
-          <h1 className="text-4xl font-bold text-center mb-8">{movie.title}</h1>
+      <div className="relative z-10 flex justify-center p-8">
+        <div className="max-w-6xl w-full flex flex-col gap-8">
+          <section className="bg-gray-950/80 backdrop-blur-md border border-white/10 rounded-3xl p-8 shadow-2xl">
+            <h1 className="text-5xl font-extrabold text-center mb-4">
+              {movie.title}
+            </h1>
 
-          <div className="flex gap-8 items-stretch flex-wrap lg:flex-nowrap">
-            <div className="w-64 flex-shrink-0">
-              {movie.poster && movie.poster !== "N/A" ? (
-                <img
-                  src={movie.poster}
-                  alt={movie.title}
-                  className="w-64 h-[384px] object-cover rounded-lg"
-                  onError={(e) => {
-                    if (movie.tmdbPoster && e.currentTarget.src !== movie.tmdbPoster) {
-                      e.currentTarget.src = movie.tmdbPoster;
-                    } else {
-                      e.currentTarget.style.display = "none";
-                    }
-                  }}
-                />
-              ) : movie.tmdbPoster ? (
-                <img
-                  src={movie.tmdbPoster}
-                  alt={movie.title}
-                  className="w-64 h-[384px] object-cover rounded-lg"
-                />
-              ) : (
-                <div className="w-64 h-[384px] bg-gray-800 rounded-lg flex items-center justify-center text-gray-400">
-                  No Image
-                </div>
-              )}
+            <div className="flex justify-center gap-3 mb-8 flex-wrap">
+              <span className="bg-red-600/80 px-3 py-1 rounded-full text-sm">
+               📅 {movie.year || "N/A"}
+              </span>
+              <span className="bg-white/10 px-3 py-1 rounded-full text-sm">
+               ⭐ {movie.rating || "Movie"}
+              </span>
+              <span className="bg-white/10 px-3 py-1 rounded-full text-sm">
+               🕓 {movie.runtime || "Runtime N/A"}
+              </span>
             </div>
 
-            <div className="flex-1 min-w-[300px] rounded-xl overflow-hidden border border-gray-700 shadow-2xl shadow-black/60 bg-black">
-              <MovieTrailer imdbID={movie.id} title={movie.title} />
-            </div>
-          </div>
+            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8 items-stretch">
+              <div>
+                {movie.poster && movie.poster !== "N/A" ? (
+                  <img
+                    src={movie.poster}
+                    alt={movie.title}
+                    className="w-full h-[420px] object-cover rounded-2xl shadow-xl"
+                    onError={(e) => {
+                      if (
+                        movie.tmdbPoster &&
+                        e.currentTarget.src !== movie.tmdbPoster
+                      ) {
+                        e.currentTarget.src = movie.tmdbPoster;
+                      } else {
+                        e.currentTarget.style.display = "none";
+                      }
+                    }}
+                  />
+                ) : movie.tmdbPoster ? (
+                  <img
+                    src={movie.tmdbPoster}
+                    alt={movie.title}
+                    className="w-full h-[420px] object-cover rounded-2xl shadow-xl"
+                  />
+                ) : (
+                  <div className="w-full h-[420px] bg-gray-800 rounded-2xl flex items-center justify-center text-gray-400">
+                    No Image
+                  </div>
+                )}
+              </div>
 
-          <div className="mt-8">
-            <p className="text-lg leading-8">{movie.plot}</p>
+              <div className="rounded-2xl overflow-hidden border border-white/10 bg-black shadow-xl">
+                <MovieTrailer imdbID={movie.id} title={movie.title} />
+              </div>
+            </div>
+
+            <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-5">
+              <h2 className="text-2xl font-bold mb-3">Overview</h2>
+              <p className="text-gray-200 text-lg leading-8">{movie.plot}</p>
+            </div>
 
             <div className="flex justify-center mt-6">
               <button
                 onClick={toggleWatchlist}
-                className={`px-6 py-3 rounded text-lg transition duration-200 ${
+                className={`px-7 py-3 rounded-xl text-lg font-semibold transition duration-200 shadow-lg ${
                   isAdded
                     ? "bg-green-600 hover:bg-green-700"
                     : "bg-red-600 hover:bg-red-800"
@@ -492,167 +534,169 @@ const MoviePage = () => {
                 {isAdded ? "Added ✓" : "Add to Watchlist"}
               </button>
             </div>
+          </section>
 
-            {(movie.cast?.length > 0 || movie.crew?.length > 0) && (
-              <div className="mt-8">
-                {movie.cast?.length > 0 && (
-                  <div className="relative">
-                    <h2 className="text-2xl font-bold mb-4">Cast</h2>
+          {(movie.cast?.length > 0 || movie.crew?.length > 0) && (
+            <section className="bg-gray-950/80 backdrop-blur-md border border-white/10 rounded-3xl p-8 shadow-2xl">
+              {movie.cast?.length > 0 && (
+                <div className="relative">
+                  <h2 className="text-3xl font-bold mb-5">Cast</h2>
 
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => setCastIndex((prev) => Math.max(prev - 1, 0))}
-                        disabled={castIndex === 0}
-                        className="bg-black/70 hover:bg-black px-3 py-2 rounded-full disabled:opacity-30"
-                      >
-                        ‹
-                      </button>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => setCastIndex((prev) => Math.max(prev - 1, 0))}
+                      disabled={castIndex === 0}
+                      className="bg-black/70 hover:bg-black px-3 py-2 rounded-full disabled:opacity-30"
+                    >
+                      ‹
+                    </button>
 
-                      <div className="flex gap-4 overflow-hidden flex-1">
-                        {movie.cast.slice(castIndex, castIndex + 5).map((actor) => (
-                          <div
-                            key={actor.id}
-                            onClick={() => navigate(`/person/${actor.id}`)}
-                            className="bg-gray-800 rounded-lg overflow-hidden text-center min-w-[140px] max-w-[140px] cursor-pointer hover:scale-105 transition"
-                          >
-                            {actor.profile_path ? (
-                              <img
-                                src={`${TMDB_PROFILE_BASE}${actor.profile_path}`}
-                                alt={actor.name}
-                                className="w-full h-40 object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-40 bg-gray-700 flex items-center justify-center text-gray-400 text-sm">
-                                No Image
-                              </div>
-                            )}
-
-                            <div className="p-2">
-                              <p className="font-bold text-sm leading-tight">
-                                {actor.name}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-1 leading-tight">
-                                {actor.character || "Character unavailable"}
-                              </p>
+                    <div className="flex gap-5 overflow-hidden flex-1">
+                      {movie.cast.slice(castIndex, castIndex + 5).map((actor) => (
+                        <div
+                          key={actor.id}
+                          onClick={() => navigate(`/person/${actor.id}`)}
+                          className="bg-white/10 border border-white/10 rounded-2xl overflow-hidden text-center min-w-[150px] max-w-[150px] cursor-pointer hover:scale-105 hover:bg-white/15 transition shadow-lg"
+                        >
+                          {actor.profile_path ? (
+                            <img
+                              src={`${TMDB_PROFILE_BASE}${actor.profile_path}`}
+                              alt={actor.name}
+                              className="w-full h-44 object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-44 bg-gray-700 flex items-center justify-center text-gray-400 text-sm">
+                              No Image
                             </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          setCastIndex((prev) =>
-                            Math.min(prev + 1, Math.max(movie.cast.length - 5, 0))
-                          )
-                        }
-                        disabled={castIndex >= movie.cast.length - 5}
-                        className="bg-black/70 hover:bg-black px-3 py-2 rounded-full disabled:opacity-30"
-                      >
-                        ›
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {movie.crew?.length > 0 && (
-                  <div className="mt-8 bg-gray-800 rounded-lg p-4">
-                    <h2 className="text-2xl font-bold mb-3">Crew</h2>
-
-                    {groupedCrew.length > 0 ? (
-                      groupedCrew.map((group) => (
-                        <p key={group.job} className="mb-2">
-                          <strong>{group.label}:</strong>{" "}
-                          {group.people.map((person) => person.name).join(", ")}
-                          {!showAllCrew && group.total > group.people.length && (
-                            <span className="text-gray-400">
-                              {" "}
-                              +{group.total - group.people.length} more
-                            </span>
                           )}
-                        </p>
-                      ))
-                    ) : (
-                      <p>No crew information available.</p>
-                    )}
 
-                    {hasHiddenCrew && (
-                      <button
-                        onClick={() => setShowAllCrew(!showAllCrew)}
-                        className="mt-3 bg-green-600 hover:bg-green-700 px-4 py-2 rounded"
-                      >
-                        {showAllCrew ? "Show Less" : "Show More"}
-                      </button>
-                    )}
+                          <div className="p-3">
+                            <p className="font-bold text-sm leading-tight">
+                              {actor.name}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1 leading-tight">
+                              {actor.character || "Character unavailable"}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() =>
+                        setCastIndex((prev) =>
+                          Math.min(prev + 1, Math.max(movie.cast.length - 5, 0))
+                        )
+                      }
+                      disabled={castIndex >= movie.cast.length - 5}
+                      className="bg-black/70 hover:bg-black px-3 py-2 rounded-full disabled:opacity-30"
+                    >
+                      ›
+                    </button>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-gray-900 p-6 rounded-lg">
-          <h2 className="text-2xl mb-3">Add Review</h2>
-
-          <StarSelector value={rating} setValue={setRating} />
-
-          <input
-            value={reviewText}
-            onChange={(e) => setReviewText(e.target.value)}
-            className="w-full mt-3 p-2 bg-gray-800 rounded"
-            placeholder="Write review..."
-          />
-
-          <button
-            onClick={submitReview}
-            className="mt-3 bg-red-600 px-4 py-2 rounded"
-          >
-            Submit
-          </button>
-        </div>
-
-        <div className="bg-gray-900 p-6 rounded-lg">
-          <h2 className="text-2xl mb-4">Reviews</h2>
-
-          {reviews.map((r) => (
-            <div key={r._id} className="bg-gray-800 p-4 rounded mb-3">
-              <div className="flex justify-between">
-                <strong>{r.userId?.username || "User"}</strong>
-                <div>{"⭐".repeat(r.rating)}</div>
-              </div>
-
-              <p className="mt-2">{r.reviewText}</p>
-
-              <small className="text-gray-400">
-                {new Date(r.createdAt).toLocaleString()}
-                {r.updatedAt && r.updatedAt !== r.createdAt && (
-                  <span> • edited</span>
-                )}
-              </small>
-
-              {String(r.userId?._id) === String(userId) && (
-                <div className="mt-2 flex gap-2">
-                  <button
-                    onClick={() => openEdit(r)}
-                    className="bg-blue-600 px-3 py-1 rounded"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    onClick={() => deleteReview(r._id)}
-                    className="bg-red-600 px-3 py-1 rounded"
-                  >
-                    Delete
-                  </button>
                 </div>
               )}
-            </div>
-          ))}
-        </div>
+
+              {movie.crew?.length > 0 && (
+                <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-5">
+                  <h2 className="text-3xl font-bold mb-4">Crew</h2>
+
+                  {groupedCrew.length > 0 ? (
+                    groupedCrew.map((group) => (
+                      <p key={group.job} className="mb-2 text-gray-200">
+                        <strong className="text-white">{group.label}:</strong>{" "}
+                        {group.people.map((person) => person.name).join(", ")}
+                        {!showAllCrew && group.total > group.people.length && (
+                          <span className="text-gray-400">
+                            {" "}
+                            +{group.total - group.people.length} more
+                          </span>
+                        )}
+                      </p>
+                    ))
+                  ) : (
+                    <p>No crew information available.</p>
+                  )}
+
+                  {hasHiddenCrew && (
+                    <button
+                      onClick={() => setShowAllCrew(!showAllCrew)}
+                      className="mt-3 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg"
+                    >
+                      {showAllCrew ? "Show Less" : "Show More"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
+
+          <section className="bg-gray-950/80 backdrop-blur-md border border-white/10 rounded-3xl p-8 shadow-2xl">
+            <h2 className="text-3xl font-bold mb-4">Add Review</h2>
+
+            <StarSelector value={rating} setValue={setRating} />
+
+            <input
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              className="w-full mt-3 p-3 bg-white/10 border border-white/10 rounded-xl text-white placeholder-gray-400"
+              placeholder="Write review..."
+            />
+
+            <button
+              onClick={submitReview}
+              className="mt-3 bg-red-600 hover:bg-red-700 px-5 py-2 rounded-lg"
+            >
+              Submit
+            </button>
+          </section>
+
+          <section className="bg-gray-950/80 backdrop-blur-md border border-white/10 rounded-3xl p-8 shadow-2xl">
+            <h2 className="text-3xl font-bold mb-4">Reviews</h2>
+
+            {reviews.map((r) => (
+              <div
+                key={r._id}
+                className="bg-white/10 border border-white/10 p-4 rounded-2xl mb-3"
+              >
+                <div className="flex justify-between">
+                  <strong>{r.userId?.username || "User"}</strong>
+                  <div>{"⭐".repeat(r.rating)}</div>
+                </div>
+
+                <p className="mt-2">{r.reviewText}</p>
+
+                <small className="text-gray-400">
+                  {new Date(r.createdAt).toLocaleString()}
+                  {r.updatedAt && r.updatedAt !== r.createdAt && (
+                    <span> • edited</span>
+                  )}
+                </small>
+
+                {String(r.userId?._id) === String(userId) && (
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      onClick={() => openEdit(r)}
+                      className="bg-blue-600 px-3 py-1 rounded"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => deleteReview(r._id)}
+                      className="bg-red-600 px-3 py-1 rounded"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </section>
 
           {recommendations.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold text-white">
+            <section className="bg-gray-950/80 backdrop-blur-md border border-white/10 rounded-3xl p-8 shadow-2xl">
+              <h2 className="text-3xl font-bold text-white mb-4">
                 You Might Also Like
               </h2>
 
@@ -676,12 +720,12 @@ const MoviePage = () => {
                     <div
                       key={rec.id}
                       onClick={() => navigate(`/movies/${rec.imdb_id}`)}
-                      className="flex-shrink-0 w-52 cursor-pointer"
+                      className="flex-shrink-0 w-52 cursor-pointer hover:scale-105 transition"
                     >
                       <img
                         src={`${TMDB_IMAGE_BASE}${rec.poster_path}`}
                         alt={rec.title || "Recommended movie"}
-                        className="w-full h-[300px] object-cover rounded-2xl shadow-xl hover:scale-105 transition"
+                        className="w-full h-[300px] object-cover rounded-2xl shadow-xl"
                       />
 
                       <p className="mt-2 text-sm font-semibold text-white leading-tight">
@@ -698,12 +742,13 @@ const MoviePage = () => {
                   ›
                 </button>
               </div>
-            </div>
+            </section>
           )}
+        </div>
       </div>
 
       {editingReview && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center">
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-70 flex justify-center items-center">
           <div className="bg-gray-900 p-6 rounded w-96">
             <h2 className="text-xl mb-3">Edit Review</h2>
 
