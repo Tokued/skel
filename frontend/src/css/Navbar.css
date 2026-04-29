@@ -242,3 +242,8 @@
   overflow: visible !important;
   z-index: 2000;
 }
+
+.vmdb-navbar {
+  position: relative;
+  z-index: 1000;
+}
