@@ -11,43 +11,51 @@ const TrailerRow = () => {
   useEffect(() => {
     const fetchTrailers = async () => {
       try {
-        const [trendingRes, upcomingRes, nowPlayingRes, popularRes] =
-          await Promise.all([
-            axios.get("https://api.themoviedb.org/3/trending/movie/week", {
-              params: { api_key: TMDB_API_KEY },
-            }),
-            axios.get("https://api.themoviedb.org/3/movie/upcoming", {
-              params: { api_key: TMDB_API_KEY, language: "en-US", page: 1 },
-            }),
-            axios.get("https://api.themoviedb.org/3/movie/now_playing", {
-              params: { api_key: TMDB_API_KEY, language: "en-US", page: 1 },
-            }),
-            axios.get("https://api.themoviedb.org/3/movie/popular", {
-              params: { api_key: TMDB_API_KEY, language: "en-US", page: 1 },
-            }),
-          ]);
+        const [upcomingRes, nowPlayingRes] = await Promise.all([
+          axios.get("https://api.themoviedb.org/3/movie/upcoming", {
+            params: { api_key: TMDB_API_KEY, language: "en-US", page: 1 },
+          }),
+          axios.get("https://api.themoviedb.org/3/movie/now_playing", {
+            params: { api_key: TMDB_API_KEY, language: "en-US", page: 1 },
+          }),
+        ]);
+
+        const today = new Date();
+
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(today.getDate() - 90);
+
+        const sixMonthsAhead = new Date();
+        sixMonthsAhead.setMonth(today.getMonth() + 6);
 
         const mixedPool = [
-          ...(upcomingRes.data?.results || []).slice(0, 8),
-          ...(trendingRes.data?.results || []).slice(0, 8),
-          ...(nowPlayingRes.data?.results || []).slice(0, 6),
-          ...(popularRes.data?.results || []).slice(0, 6),
+          ...(upcomingRes.data?.results || []),
+          ...(nowPlayingRes.data?.results || []),
         ];
 
         const uniqueMovies = Object.values(
           mixedPool.reduce((acc, movie) => {
-            acc[movie.id] = movie;
+            if (!movie?.id || !movie?.release_date) return acc;
+
+            const releaseDate = new Date(movie.release_date);
+            const isRecentOrUpcoming =
+              releaseDate >= ninetyDaysAgo && releaseDate <= sixMonthsAhead;
+
+            if (isRecentOrUpcoming) {
+              acc[movie.id] = movie;
+            }
+
             return acc;
           }, {})
-        ).sort(() => 0.5 - Math.random());
+        ).sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
 
         const trailerData = await Promise.all(
-          uniqueMovies.map(async (movie) => {
+          uniqueMovies.slice(0, 24).map(async (movie) => {
             try {
               const videoRes = await axios.get(
                 `https://api.themoviedb.org/3/movie/${movie.id}/videos`,
                 {
-                  params: { api_key: TMDB_API_KEY },
+                  params: { api_key: TMDB_API_KEY, language: "en-US" },
                 }
               );
 
@@ -61,24 +69,23 @@ const TrailerRow = () => {
                     vid.official === true
                 ) ||
                 results.find(
-                  (vid) =>
-                    vid.site === "YouTube" &&
-                    vid.type === "Trailer"
+                  (vid) => vid.site === "YouTube" && vid.type === "Trailer"
                 ) ||
                 results.find(
-                  (vid) =>
-                    vid.site === "YouTube" &&
-                    vid.type === "Teaser"
-                ) ||
-                results.find((vid) => vid.site === "YouTube");
+                  (vid) => vid.site === "YouTube" && vid.type === "Teaser"
+                );
 
-              return trailer
-                ? {
-                    id: movie.id,
-                    title: movie.title,
-                    youtubeKey: trailer.key,
-                  }
-                : null;
+              if (!trailer) return null;
+
+              return {
+                id: movie.id,
+                title: movie.title,
+                releaseDate: movie.release_date,
+                posterPath: movie.poster_path,
+                backdropPath: movie.backdrop_path,
+                overview: movie.overview,
+                youtubeKey: trailer.key,
+              };
             } catch {
               return null;
             }
@@ -99,18 +106,30 @@ const TrailerRow = () => {
     setSelectedMovieDetails(null);
 
     try {
-      const [movieRes, externalIdsRes] = await Promise.all([
+      const [movieRes, externalIdsRes, creditsRes] = await Promise.all([
         axios.get(`https://api.themoviedb.org/3/movie/${trailer.id}`, {
           params: { api_key: TMDB_API_KEY, language: "en-US" },
         }),
-        axios.get(`https://api.themoviedb.org/3/movie/${trailer.id}/external_ids`, {
-          params: { api_key: TMDB_API_KEY },
+        axios.get(
+          `https://api.themoviedb.org/3/movie/${trailer.id}/external_ids`,
+          {
+            params: { api_key: TMDB_API_KEY },
+          }
+        ),
+        axios.get(`https://api.themoviedb.org/3/movie/${trailer.id}/credits`, {
+          params: { api_key: TMDB_API_KEY, language: "en-US" },
         }),
       ]);
+
+      const director =
+        creditsRes.data?.crew?.find((person) => person.job === "Director")
+          ?.name || "N/A";
 
       setSelectedMovieDetails({
         ...movieRes.data,
         imdb_id: externalIdsRes.data?.imdb_id || null,
+        cast: creditsRes.data?.cast?.slice(0, 6) || [],
+        director,
       });
     } catch (err) {
       console.error("failed to fetch movie details", err);
@@ -122,17 +141,25 @@ const TrailerRow = () => {
     setSelectedMovieDetails(null);
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   return (
     <div style={styles.section}>
-      <h2 style={styles.heading}>Featured Trailers</h2>
+      <h2 style={styles.heading}>Fresh Trailers</h2>
 
       <div style={styles.grid}>
         {trailers.map((t) => (
           <div key={t.id} style={styles.card}>
-            <h3 style={styles.title}>{t.title}</h3>
-
             <div
-              style={styles.frameWrap}
+              style={styles.cardImageWrap}
               onClick={() => handleTrailerClick(t)}
             >
               <img
@@ -140,9 +167,22 @@ const TrailerRow = () => {
                 alt={t.title}
                 style={styles.thumbnail}
               />
+
+              <div style={styles.cardGradient} />
+
               <div style={styles.playOverlay}>
                 <div style={styles.playButton}>▶</div>
               </div>
+            </div>
+
+            <div style={styles.cardBody}>
+              <h3 style={styles.title}>{t.title}</h3>
+
+              {t.releaseDate && (
+                <p style={styles.releaseDate}>
+                  {new Date(t.releaseDate).toLocaleDateString()}
+                </p>
+              )}
             </div>
           </div>
         ))}
@@ -150,15 +190,12 @@ const TrailerRow = () => {
 
       {selectedTrailer && (
         <div style={styles.modalOverlay} onClick={closeModal}>
-          <div
-            style={styles.modalContent}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <button style={styles.closeButton} onClick={closeModal}>
               ×
             </button>
 
-            <div style={styles.splitModal}>
+            <div style={styles.modalLayout}>
               <div style={styles.leftPanel}>
                 <div style={styles.modalFrameWrap}>
                   <iframe
@@ -170,6 +207,32 @@ const TrailerRow = () => {
                     allowFullScreen
                   />
                 </div>
+
+                {selectedMovieDetails?.cast?.length > 0 && (
+                  <div style={styles.castSection}>
+                    <h3 style={styles.castHeading}>Cast</h3>
+
+                    <div style={styles.castRow}>
+                      {selectedMovieDetails.cast.map((actor) => (
+                        <div key={actor.id} style={styles.castCard}>
+                          {actor.profile_path ? (
+                            <img
+                              src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
+                              alt={actor.name}
+                              style={styles.castImage}
+                            />
+                          ) : (
+                            <div style={styles.castPlaceholder}>?</div>
+                          )}
+
+                          <div style={styles.castTextBox}>
+                            <p style={styles.castName}>{actor.name}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={styles.rightPanel}>
@@ -183,17 +246,47 @@ const TrailerRow = () => {
                       />
                     ) : null}
 
-                    <h3 style={styles.sidebarTitle}>
+                    <h2 style={styles.sidebarTitle}>
                       {selectedMovieDetails.title}
-                    </h3>
+                    </h2>
 
                     <p style={styles.sidebarMeta}>
                       {selectedMovieDetails.release_date?.slice(0, 4) || "N/A"}
+                      {selectedMovieDetails.runtime
+                        ? ` • ${selectedMovieDetails.runtime} min`
+                        : ""}
                     </p>
 
                     <p style={styles.sidebarOverview}>
                       {selectedMovieDetails.overview || "No overview available."}
                     </p>
+
+                    <div style={styles.sidebarDivider} />
+
+                    <div style={styles.factRow}>
+                      <span style={styles.factLabel}>Release Date</span>
+                      <span style={styles.factValue}>
+                        {formatDate(selectedMovieDetails.release_date)}
+                      </span>
+                    </div>
+
+                    <div style={styles.factRow}>
+                      <span style={styles.factLabel}>Director</span>
+                      <span style={styles.factValue}>
+                        {selectedMovieDetails.director}
+                      </span>
+                    </div>
+
+                    <div style={styles.factRow}>
+                      <span style={styles.factLabel}>Genres</span>
+                      <span style={styles.factValue}>
+                        {selectedMovieDetails.genres?.length
+                          ? selectedMovieDetails.genres
+                              .map((genre) => genre.name)
+                              .join(", ")
+                          : "N/A"}
+                      </span>
+                    </div>
 
                     {selectedMovieDetails.imdb_id ? (
                       <a
@@ -222,41 +315,37 @@ const TrailerRow = () => {
 
 const styles = {
   section: {
-    marginTop: "50px",
+    marginTop: "60px",
   },
 
   heading: {
-    color: "#e0e0e0",
-    marginBottom: "20px",
+    color: "#fff",
+    marginBottom: "24px",
+    fontSize: "34px",
+    fontWeight: "800",
+    letterSpacing: "0.3px",
+    textShadow: "0 4px 18px rgba(0,0,0,0.8)",
   },
 
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-    gap: "24px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))",
+    gap: "28px",
   },
 
   card: {
-    background: "#1e1e1e",
-    padding: "14px",
-    borderRadius: "14px",
+    background:
+      "linear-gradient(180deg, rgba(35,35,35,0.98), rgba(12,12,12,0.98))",
+    borderRadius: "22px",
+    border: "1px solid rgba(255,255,255,0.09)",
+    boxShadow: "0 18px 42px rgba(0,0,0,0.45)",
+    overflow: "hidden",
   },
 
-  title: {
-    margin: "0 0 14px 0",
-    fontSize: "18px",
-    lineHeight: "1.25",
-    color: "#fff",
-    minHeight: "46px",
-    wordBreak: "break-word",
-    textAlign: "center",
-  },
-
-  frameWrap: {
+  cardImageWrap: {
     position: "relative",
     width: "100%",
     aspectRatio: "16 / 9",
-    borderRadius: "10px",
     overflow: "hidden",
     background: "#000",
     cursor: "pointer",
@@ -267,6 +356,14 @@ const styles = {
     height: "100%",
     objectFit: "cover",
     display: "block",
+    filter: "brightness(0.82)",
+  },
+
+  cardGradient: {
+    position: "absolute",
+    inset: 0,
+    background:
+      "linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.65))",
   },
 
   playOverlay: {
@@ -275,65 +372,102 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "rgba(0,0,0,0.18)",
   },
 
   playButton: {
-    background: "rgba(255,0,0,0.9)",
+    background: "rgba(229, 9, 20, 0.96)",
     color: "#fff",
-    width: "70px",
-    height: "50px",
-    borderRadius: "12px",
+    width: "74px",
+    height: "52px",
+    borderRadius: "16px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "26px",
+    fontSize: "27px",
+    boxShadow: "0 10px 28px rgba(229,9,20,0.38)",
+  },
+
+  cardBody: {
+    padding: "16px 18px 18px",
+    textAlign: "center",
+  },
+
+  title: {
+    margin: "0 0 12px 0",
+    fontSize: "20px",
+    lineHeight: "1.25",
+    color: "#fff",
+    minHeight: "50px",
+    wordBreak: "break-word",
+    textAlign: "center",
+    fontWeight: "800",
+  },
+
+  releaseDate: {
+    display: "inline-block",
+    color: "#ddd",
+    fontSize: "13px",
+    margin: 0,
+    background: "rgba(255,255,255,0.08)",
+    padding: "6px 12px",
+    borderRadius: "999px",
   },
 
   modalOverlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(0,0,0,0.82)",
+    background: "rgba(0,0,0,0.86)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 9999,
-    padding: "20px",
+    padding: "12px",
   },
 
   modalContent: {
     position: "relative",
-    width: "min(1250px, 96vw)",
-    background: "#111",
-    borderRadius: "16px",
-    padding: "20px",
+    width: "min(1560px, 99vw)",
+    maxHeight: "96vh",
+    overflowY: "auto",
+    background: "linear-gradient(180deg, #101010, #050505)",
+    borderRadius: "24px",
+    padding: "14px",
+    border: "1px solid rgba(255,255,255,0.12)",
+    boxShadow: "0 24px 70px rgba(0,0,0,0.75)",
   },
 
-  splitModal: {
-    display: "flex",
-    gap: "20px",
+  modalLayout: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) 360px",
+    gap: "14px",
     alignItems: "stretch",
   },
 
   leftPanel: {
-    flex: 3,
     minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
   },
 
   rightPanel: {
-    flex: 1,
-    minWidth: "260px",
+    background:
+      "linear-gradient(180deg, rgba(22,22,22,0.96), rgba(7,7,7,0.96))",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: "18px",
+    padding: "14px",
     display: "flex",
     flexDirection: "column",
-    gap: "12px",
+    gap: "10px",
   },
 
   modalFrameWrap: {
     width: "100%",
     aspectRatio: "16 / 9",
-    borderRadius: "12px",
+    borderRadius: "18px",
     overflow: "hidden",
     background: "#000",
+    boxShadow: "0 18px 42px rgba(0,0,0,0.5)",
   },
 
   modalIframe: {
@@ -343,51 +477,181 @@ const styles = {
     display: "block",
   },
 
+  infoCard: {
+    padding: "22px 26px",
+    background:
+      "linear-gradient(180deg, rgba(35,35,35,0.72), rgba(14,14,14,0.72))",
+    borderRadius: "18px",
+    border: "1px solid rgba(255,255,255,0.1)",
+  },
+
+  modalMainTitle: {
+    margin: "0 0 10px 0",
+    color: "#fff",
+    fontSize: "30px",
+    lineHeight: "1.15",
+    fontWeight: "900",
+  },
+
+  modalOverview: {
+    margin: 0,
+    color: "#e2e2e2",
+    fontSize: "15px",
+    lineHeight: "1.55",
+  },
+
+  castSection: {
+    padding: "10px 12px 12px",
+    background:
+      "linear-gradient(180deg, rgba(20,20,20,0.82), rgba(8,8,8,0.82))",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "16px",
+  },
+
+  castHeading: {
+    margin: "0 0 8px 0",
+    color: "#fff",
+    fontSize: "17px",
+    fontWeight: "900",
+  },
+
+castRow: {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+  gap: "14px",
+},
+
+castCard: {
+  minWidth: "135px",
+  maxWidth: "135px",
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  borderRadius: "14px",
+  overflow: "hidden",
+  textAlign: "center",
+  flex: "0 0 auto",
+  transition: "transform 0.2s ease",
+},
+
+castImage: {
+  width: "100%",
+  height: "170px",
+  objectFit: "cover",
+  objectPosition: "center 20%",
+  display: "block",
+},
+
+castPlaceholder: {
+  width: "100%",
+  height: "140px",
+  background: "#222",
+  color: "#777",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "18px",
+  fontWeight: "800",
+},
+
+  castTextBox: {
+    padding: "8px 6px 8px",
+  },
+
+castName: {
+  margin: "0",
+  color: "#fff",
+  fontSize: "13px",
+  lineHeight: "1.2",
+  fontWeight: "900",
+},
+
+  castRole: {
+    margin: 0,
+    color: "#bcbcbc",
+    fontSize: "9px",
+    lineHeight: "1.1",
+  },
+
   sidebarPoster: {
     width: "100%",
-    borderRadius: "10px",
-    objectFit: "cover",
+    maxHeight: "420px",
+    borderRadius: "14px",
+    objectFit: "contain",
+    objectPosition: "center",
+    background: "#000",
+    boxShadow: "0 14px 34px rgba(0,0,0,0.45)",
   },
 
   sidebarTitle: {
-    margin: 0,
+    margin: "6px 0 0",
     color: "#fff",
-    fontSize: "24px",
-    lineHeight: "1.2",
+    fontSize: "25px",
+    lineHeight: "1.12",
+    fontWeight: "900",
   },
 
   sidebarMeta: {
     margin: 0,
-    color: "#aaa",
+    color: "#b8b8b8",
     fontSize: "14px",
   },
 
   sidebarOverview: {
-    margin: 0,
-    color: "#ddd",
-    fontSize: "14px",
+    margin: "4px 0 0",
+    color: "#f0f0f0",
+    fontSize: "13px",
     lineHeight: "1.45",
+  },
+
+  sidebarDivider: {
+    height: "1px",
+    background: "rgba(255,255,255,0.14)",
+    margin: "6px 0",
+  },
+
+  factRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: "12px",
+    color: "#fff",
+    fontSize: "12px",
+  },
+
+  factLabel: {
+    color: "#f4f4f4",
+    fontWeight: "700",
+    whiteSpace: "nowrap",
+  },
+
+  factValue: {
+    color: "#cfcfcf",
+    textAlign: "right",
+    lineHeight: "1.3",
   },
 
   detailsButton: {
     marginTop: "auto",
     textAlign: "center",
-    padding: "12px",
-    background: "#e50914",
+    padding: "13px",
+    background: "linear-gradient(90deg, #d71920, #e33b2f)",
     color: "#fff",
     textDecoration: "none",
-    borderRadius: "8px",
-    fontWeight: "600",
+    borderRadius: "12px",
+    fontWeight: "900",
+    fontSize: "17px",
+    boxShadow: "0 12px 30px rgba(229,9,20,0.28)",
   },
 
   disabledButton: {
     marginTop: "auto",
-    padding: "12px",
+    padding: "13px",
     background: "#333",
     color: "#999",
     border: "none",
-    borderRadius: "8px",
-    fontWeight: "600",
+    borderRadius: "12px",
+    fontWeight: "800",
+    fontSize: "16px",
   },
 
   loadingText: {
@@ -397,15 +661,18 @@ const styles = {
 
   closeButton: {
     position: "absolute",
-    top: "10px",
+    top: "12px",
     right: "14px",
-    background: "transparent",
-    border: "none",
+    background: "rgba(0,0,0,0.6)",
+    border: "1px solid rgba(255,255,255,0.18)",
     color: "#fff",
-    fontSize: "32px",
+    fontSize: "30px",
     cursor: "pointer",
     lineHeight: 1,
     zIndex: 2,
+    width: "40px",
+    height: "40px",
+    borderRadius: "999px",
   },
 };
 
