@@ -23,7 +23,6 @@ const RecommendationsRow = ({
       setLoading(true);
 
       try {
-        // Use "recommendations" for both movie and tv — matches MoviePage behavior
         const res = await axios.get(
           `https://api.themoviedb.org/3/${mediaType}/${mostRecentMovieTmdbId}/recommendations`,
           {
@@ -35,16 +34,14 @@ const RecommendationsRow = ({
           }
         );
 
-        const mapped = (res.data?.results || [])
-          .slice(0, 12)
-          .map((item) => ({
-            id: item.id,
-            tmdbId: item.id,
-            title: item.title || item.name,
-            poster: item.poster_path
-              ? `${TMDB_IMAGE_BASE}${item.poster_path}`
-              : null,
-          }));
+        const mapped = (res.data?.results || []).slice(0, 12).map((item) => ({
+          id: item.id,
+          tmdbId: item.id,
+          title: item.title || item.name,
+          poster: item.poster_path
+            ? `${TMDB_IMAGE_BASE}${item.poster_path}`
+            : null,
+        }));
 
         setRecommendations(mapped);
       } catch (err) {
@@ -68,8 +65,30 @@ const RecommendationsRow = ({
     rowRef.current?.scrollBy({ left: scrollAmount, behavior: "smooth" });
   };
 
-  const handleMovieClick = (item) => {
-    navigate(`/movies/${item.tmdbId}`);
+  const handleMovieClick = async (item) => {
+    try {
+      if (mediaType === "tv") {
+        console.warn("TV recommendations do not have IMDb movie routes yet.");
+        return;
+      }
+
+      const externalIdsRes = await axios.get(
+        `https://api.themoviedb.org/3/movie/${item.tmdbId}/external_ids`,
+        {
+          params: { api_key: TMDB_API_KEY },
+        }
+      );
+
+      const imdbID = externalIdsRes.data?.imdb_id;
+
+      if (imdbID) {
+        navigate(`/movies/${imdbID}`);
+      } else {
+        console.warn("No IMDb ID found for this TMDb movie.");
+      }
+    } catch (err) {
+      console.error("Error converting TMDb ID to IMDb ID:", err);
+    }
   };
 
   if (!mostRecentMovieTmdbId) return null;
