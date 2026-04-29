@@ -29,7 +29,6 @@ const HomePage = () => {
           `http://localhost:8081/watchlist/${user.id}`
         );
 
-        // Filter for watched movies and sort by most recent watched date
         const watched = watchlistRes.data
           .filter((m) => m.watched)
           .sort(
@@ -39,20 +38,16 @@ const HomePage = () => {
           );
 
         if (watched.length > 0) {
-          // Get the movie details to fetch title
           const movieRes = await axios.get(
             `http://localhost:8081/movies/${watched[0].movieId}`
           );
 
-          // Store the title for display
           setMostRecentWatchedTitle(movieRes.data.title);
 
-          // Search TMDB for this movie to get its TMDb ID
           const tmdbRes = await axios.get(
             `https://api.themoviedb.org/3/find/${watched[0].movieId}?api_key=${TMDB_API_KEY}&external_source=imdb_id`
           );
 
-          // Check if it's a movie or TV show
           const movie = tmdbRes.data?.movie_results?.[0];
           const show = tmdbRes.data?.tv_results?.[0];
 
@@ -180,8 +175,6 @@ const HomePage = () => {
   const handleMovieClick = (movie) => {
     if (movie.hasOmdbRoute) {
       navigate(`/movies/${movie.id}`);
-    } else {
-      console.warn("No IMDb ID found for this TMDb movie yet.");
     }
   };
 
@@ -232,7 +225,13 @@ const HomePage = () => {
 
       <div style={styles.pageContent}>
         <div style={styles.hero}>
-          <img src={logo} alt="VMDB logo" style={styles.logo} />
+          {/* 🔥 ONLY CHANGE RIGHT HERE */}
+          <img
+            src={logo}
+            alt="VMDB logo"
+            className="vmdb-logo-hero"
+          />
+
           <p style={styles.subtitle}>
             Search movies, explore titles, and manage your watchlist all in one
             place.
@@ -360,13 +359,6 @@ const styles = {
     justifyContent: "center",
     textAlign: "center",
     padding: "10px 0",
-  },
-
-  logo: {
-    width: "160px",
-    height: "auto",
-    marginBottom: "10px",
-    filter: "drop-shadow(0 6px 15px rgba(0,0,0,0.7))",
   },
 
   subtitle: {
