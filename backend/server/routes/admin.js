@@ -105,6 +105,33 @@ router.put("/reviews/:id/flag", async (req, res) => {
 });
 
 // ------------------------
+// 🚨 FLAGGED REVIEW QUEUE
+// ------------------------
+router.get("/reviews/flagged", async (req, res) => {
+  try {
+    const flaggedReviews = await Review.find({ flagged: true }).populate(
+      "userId",
+      "username"
+    );
+    res.json(flaggedReviews);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ------------------------
+// ✅ UNFLAG REVIEW
+// ------------------------
+router.put("/reviews/:id/unflag", async (req, res) => {
+  try {
+    await Review.findByIdAndUpdate(req.params.id, { flagged: false });
+    res.json({ message: "Review unflagged" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ------------------------
 // ⚠️ WARN USER
 // ------------------------
 router.put("/users/:id/warn", async (req, res) => {
@@ -117,12 +144,36 @@ router.put("/users/:id/warn", async (req, res) => {
 });
 
 // ------------------------
+// ✅ UNWARN USER
+// ------------------------
+router.put("/users/:id/unwarn", async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.params.id, { warned: false });
+    res.json({ message: "User warning removed" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ------------------------
 // 🔨 BAN USER
 // ------------------------
 router.put("/users/:id/ban", async (req, res) => {
   try {
     await User.findByIdAndUpdate(req.params.id, { isBanned: true });
     res.json({ message: "User banned" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ------------------------
+// ✅ UNBAN USER
+// ------------------------
+router.put("/users/:id/unban", async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.params.id, { isBanned: false });
+    res.json({ message: "User unbanned" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

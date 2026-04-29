@@ -339,6 +339,19 @@ const MoviePage = () => {
     }
   };
 
+  const reportReview = async (reviewId) => {
+    if (!window.confirm("Report this review to admin moderation?")) return;
+
+    try {
+      await axios.put(`http://localhost:8081/reviews/${reviewId}/flag`);
+      fetchReviews();
+      alert("Review reported. Admins can review it in the flagged queue.");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to report review");
+    }
+  };
+
   const deleteReview = async (reviewId) => {
     if (!window.confirm("Delete this review?")) return;
 
@@ -666,30 +679,46 @@ const MoviePage = () => {
 
                 <p className="mt-2">{r.reviewText}</p>
 
-                <small className="text-gray-400">
-                  {new Date(r.createdAt).toLocaleString()}
-                  {r.updatedAt && r.updatedAt !== r.createdAt && (
-                    <span> • edited</span>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  {r.flagged && (
+                    <span className="text-yellow-300 font-semibold">🚩 Reported</span>
                   )}
-                </small>
 
-                {String(r.userId?._id) === String(userId) && (
-                  <div className="mt-2 flex gap-2">
-                    <button
-                      onClick={() => openEdit(r)}
-                      className="bg-blue-600 px-3 py-1 rounded"
-                    >
-                      Edit
-                    </button>
+                  <small className="text-gray-400">
+                    {new Date(r.createdAt).toLocaleString()}
+                    {r.updatedAt && r.updatedAt !== r.createdAt && (
+                      <span> • edited</span>
+                    )}
+                  </small>
+                </div>
 
-                    <button
-                      onClick={() => deleteReview(r._id)}
-                      className="bg-red-600 px-3 py-1 rounded"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {String(r.userId?._id) === String(userId) && (
+                    <>
+                      <button
+                        onClick={() => openEdit(r)}
+                        className="bg-blue-600 px-3 py-1 rounded"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => deleteReview(r._id)}
+                        className="bg-red-600 px-3 py-1 rounded"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => reportReview(r._id)}
+                    disabled={r.flagged}
+                    className={`px-3 py-1 rounded ${r.flagged ? "bg-gray-600 text-gray-200" : "bg-yellow-500 text-black hover:bg-yellow-400"}`}
+                  >
+                    {r.flagged ? "Reported" : "Report"}
+                  </button>
+                </div>
               </div>
             ))}
           </section>
