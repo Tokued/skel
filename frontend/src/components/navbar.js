@@ -220,7 +220,7 @@ export default function Navbar() {
   };
 
   return (
-    <ReactNavbar bg="dark" variant="dark" expand="lg" className="vmdb-navbar">
+    <ReactNavbar bg="transparent" variant="dark" expand="lg" className="vmdb-navbar">
       <Container fluid className="vmdb-navbar-container">
         <div className="vmdb-navbar-left">
           <Link to="/home" className="vmdb-logo-link">

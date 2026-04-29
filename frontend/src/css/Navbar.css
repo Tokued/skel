@@ -1,10 +1,10 @@
 .vmdb-navbar {
-  background-color: #121212 !important;
+  background-color: transparent !important;
   height: 64px;
   padding: 0 16px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid #222;
+  border-bottom: none;
 }
 
 .vmdb-navbar-container {
@@ -231,7 +231,7 @@
 }
 
 .vmdb-navbar {
-  background-color: #0b0b0b !important;
+  background-color: transparent !important;
 }
 
 .vmdb-navbar-container {
