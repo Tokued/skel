@@ -24,8 +24,13 @@ export default function Navbar() {
   const [selectedGenre, setSelectedGenre] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
 
+  const [aiMode, setAiMode] = useState(false);
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiError, setAiError] = useState("");
+
   const navigate = useNavigate();
   const searchRef = useRef(null);
+  const filterRef = useRef(null);
 
   const activeError = filterError || searchError;
 
@@ -145,24 +150,27 @@ export default function Navbar() {
 
   useEffect(() => {
     const delay = setTimeout(() => {
-      if (searchQuery.trim()) {
+      if (!aiMode && searchQuery.trim()) {
         if (searchError === "Type a movie or show title in the search bar.") {
           setSearchError("");
         }
         searchMovies();
-      } else {
+      } else if (!aiMode) {
         setSearchResults([]);
         setShowDropdown(false);
       }
     }, 300);
 
     return () => clearTimeout(delay);
-  }, [searchQuery, searchMovies, searchError]);
+  }, [searchQuery, searchMovies, searchError, aiMode]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowDropdown(false);
+      }
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        // Filter dropdown will close automatically via Bootstrap
       }
     };
 
@@ -186,9 +194,23 @@ export default function Navbar() {
     navigate(`/search?query=${encodeURIComponent(trimmedQuery)}`);
   };
 
-  const handleApplyFilters = () => {
-    setShowDropdown(false);
+  const handleAiSubmit = (e) => {
+    e.preventDefault();
 
+    const trimmedQuery = aiQuery.trim();
+
+    if (!trimmedQuery) {
+      setAiError("Describe what you want to watch.");
+      return;
+    }
+
+    setAiError("");
+    setAiMode(false);
+    setAiQuery("");
+    navigate(`/ai-results?description=${encodeURIComponent(trimmedQuery)}`);
+  };
+
+  const handleApplyFilters = () => {
     const isAllSelected =
       selectedCategory === "All" &&
       !selectedYear &&
@@ -222,6 +244,7 @@ export default function Navbar() {
   return (
     <ReactNavbar bg="transparent" variant="dark" expand="lg" className="vmdb-navbar">
       <Container fluid className="vmdb-navbar-container">
+        {/* ──────────────────── LEFT SECTION ──────────────────── */}
         <div className="vmdb-navbar-left">
           <Link to="/home" className="vmdb-logo-link">
             <img src={logo} alt="VMDB logo" className="vmdb-logo" />
@@ -246,151 +269,212 @@ export default function Navbar() {
           </NavDropdown>
         </div>
 
+        {/* ──────────────────── CENTER SECTION (Search) ──────────────────── */}
         <div className="vmdb-navbar-center" ref={searchRef}>
-          <Form className="vmdb-search-form" onSubmit={handleSearchSubmit}>
-            {showDropdown && searchResults.length > 0 && (
-              <div className="vmdb-suggestions-dropdown">
-                {searchResults.map((movie) => (
-                  <div
-                    key={movie.id}
-                    className="vmdb-suggestion-item"
-                    onClick={() => {
-                      setShowDropdown(false);
-                      setSearchError("");
-                      setFilterError("");
-                      navigate(`/movies/${movie.id}`);
-                    }}
-                  >
-                    {movie.poster !== "N/A" ? (
-                      <img
-                        src={movie.poster}
-                        alt={movie.title}
-                        className="vmdb-suggestion-poster"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <div className="vmdb-suggestion-no-poster">No Image</div>
-                    )}
+          {/* ════════════════════════════════
+              NORMAL SEARCH MODE
+          ════════════════════════════════ */}
+          {!aiMode && (
+            <Form className="vmdb-search-form" onSubmit={handleSearchSubmit}>
+              {showDropdown && searchResults.length > 0 && (
+                <div className="vmdb-suggestions-dropdown">
+                  {searchResults.map((movie) => (
+                    <div
+                      key={movie.id}
+                      className="vmdb-suggestion-item"
+                      onClick={() => {
+                        setShowDropdown(false);
+                        setSearchError("");
+                        setFilterError("");
+                        navigate(`/movies/${movie.id}`);
+                      }}
+                    >
+                      {movie.poster !== "N/A" ? (
+                        <img
+                          src={movie.poster}
+                          alt={movie.title}
+                          className="vmdb-suggestion-poster"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="vmdb-suggestion-no-poster">No Image</div>
+                      )}
 
-                    <div className="vmdb-suggestion-text">
-                      <div className="vmdb-suggestion-title">{movie.title}</div>
-                      <div className="vmdb-suggestion-subtitle">
-                        {movie.year} • {movie.type}
+                      <div className="vmdb-suggestion-text">
+                        <div className="vmdb-suggestion-title">{movie.title}</div>
+                        <div className="vmdb-suggestion-subtitle">
+                          {movie.year} • {movie.type}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <InputGroup>
-              <NavDropdown title="Filters" menuVariant="dark">
-                <div style={styles.filterMenu}>
-                  <div style={styles.filterGroup}>
-                    <div style={styles.filterLabel}>Type</div>
-                    <Form.Select
-                      value={selectedCategory}
-                      onChange={(e) => {
-                        setSelectedCategory(e.target.value);
-                        setFilterError("");
-                      }}
-                    >
-                      <option value="All">All</option>
-                      <option value="Movies">Movies</option>
-                      <option value="Series">TV Shows</option>
-                    </Form.Select>
-                  </div>
-
-                  <div style={styles.filterGroup}>
-                    <div style={styles.filterLabel}>Released</div>
-                    <Form.Select
-                      value={selectedYear}
-                      onChange={(e) => {
-                        setSelectedYear(e.target.value);
-                        setFilterError("");
-                      }}
-                    >
-                      <option value="">All Years</option>
-                      {years.map((year) => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ))}
-                    </Form.Select>
-                  </div>
-
-                  <div style={styles.filterGroup}>
-                    <div style={styles.filterLabel}>Genre</div>
-                    <Form.Select
-                      value={selectedGenre}
-                      onChange={(e) => {
-                        setSelectedGenre(e.target.value);
-                        setFilterError("");
-                      }}
-                    >
-                      <option value="">All Genres</option>
-                      <option value="Action">Action</option>
-                      <option value="Comedy">Comedy</option>
-                      <option value="Drama">Drama</option>
-                      <option value="Horror">Horror</option>
-                      <option value="Romance">Romance</option>
-                      <option value="Thriller">Thriller</option>
-                    </Form.Select>
-                  </div>
-
-                  <Button
-                    variant="light"
-                    size="sm"
-                    onClick={handleApplyFilters}
-                    style={styles.applyButton}
-                  >
-                    ✓ Apply Filters
-                  </Button>
+                  ))}
                 </div>
-              </NavDropdown>
+              )}
 
-              <Form.Control
-                type="text"
-                placeholder={activeError || "Search VMDB"}
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  if (searchError !== "Type a movie or show title in the search bar.") {
+              <InputGroup>
+                {/* FILTERS BUTTON */}
+                <div ref={filterRef}>
+                  <NavDropdown
+                    id="filters-dropdown"
+                    title="⚙ Filters"
+                    menuVariant="dark"
+                    className="vmdb-filters-btn-wrapper"
+                  >
+                    <div className="vmdb-filters-dropdown">
+                      <div className="vmdb-filter-group">
+                        <label className="vmdb-filter-label">Type</label>
+                        <Form.Select
+                          className="vmdb-filter-select"
+                          value={selectedCategory}
+                          onChange={(e) => {
+                            setSelectedCategory(e.target.value);
+                            setFilterError("");
+                          }}
+                        >
+                          <option value="All">All</option>
+                          <option value="Movies">Movies</option>
+                          <option value="Series">TV Shows</option>
+                        </Form.Select>
+                      </div>
+
+                      <div className="vmdb-filter-group">
+                        <label className="vmdb-filter-label">Released</label>
+                        <Form.Select
+                          className="vmdb-filter-select"
+                          value={selectedYear}
+                          onChange={(e) => {
+                            setSelectedYear(e.target.value);
+                            setFilterError("");
+                          }}
+                        >
+                          <option value="">All Years</option>
+                          {years.map((year) => (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </div>
+
+                      <div className="vmdb-filter-group">
+                        <label className="vmdb-filter-label">Genre</label>
+                        <Form.Select
+                          className="vmdb-filter-select"
+                          value={selectedGenre}
+                          onChange={(e) => {
+                            setSelectedGenre(e.target.value);
+                            setFilterError("");
+                          }}
+                        >
+                          <option value="">All Genres</option>
+                          <option value="Action">Action</option>
+                          <option value="Comedy">Comedy</option>
+                          <option value="Drama">Drama</option>
+                          <option value="Horror">Horror</option>
+                          <option value="Romance">Romance</option>
+                          <option value="Thriller">Thriller</option>
+                        </Form.Select>
+                      </div>
+
+                      <Button
+                        className="vmdb-apply-filters-btn"
+                        onClick={handleApplyFilters}
+                      >
+                        ✓ Apply Filters
+                      </Button>
+
+                      {filterError && (
+                        <div style={{ color: "#ff6b6b", fontSize: "12px", marginTop: "8px", textAlign: "center" }}>
+                          {filterError}
+                        </div>
+                      )}
+                    </div>
+                  </NavDropdown>
+                </div>
+
+                {/* SEARCH INPUT */}
+                <Form.Control
+                  type="text"
+                  placeholder={activeError || "Search VMDB"}
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (searchError !== "Type a movie or show title in the search bar.") {
+                      setSearchError("");
+                    }
+                  }}
+                  className={`vmdb-search-input ${activeError ? "error" : ""}`}
+                />
+
+                {/* AI TOGGLE BUTTON */}
+                <Button
+                  type="button"
+                  className="vmdb-ai-toggle-btn"
+                  onClick={() => {
+                    setAiMode(true);
+                    setSearchQuery("");
+                    setSearchResults([]);
+                    setShowDropdown(false);
                     setSearchError("");
-                  }
-                }}
-                className={`vmdb-search-input ${activeError ? "error" : ""}`}
-              />
+                    setFilterError("");
+                  }}
+                  title="Switch to AI description search"
+                >
+                  ✨ AI
+                </Button>
 
-              <Button type="submit" variant="light">
-                Search
-              </Button>
-            </InputGroup>
-          </Form>
+                {/* SEARCH BUTTON */}
+                <Button type="submit" className="vmdb-search-btn">
+                  🔍
+                </Button>
+              </InputGroup>
+            </Form>
+          )}
+
+          {/* ════════════════════════════════
+              AI SEARCH MODE
+          ════════════════════════════════ */}
+          {aiMode && (
+            <Form className="vmdb-search-form" onSubmit={handleAiSubmit}>
+              <InputGroup>
+                {/* AI INPUT */}
+                <Form.Control
+                  type="text"
+                  autoFocus
+                  placeholder={aiError || "Describe a vibe, plot, or feeling…"}
+                  value={aiQuery}
+                  onChange={(e) => {
+                    setAiQuery(e.target.value);
+                    setAiError("");
+                  }}
+                  className={`vmdb-search-input vmdb-ai-input ${aiError ? "error" : ""}`}
+                />
+
+                {/* EXIT AI MODE */}
+                <Button
+                  type="button"
+                  className="vmdb-ai-toggle-btn vmdb-ai-toggle-active"
+                  onClick={() => {
+                    setAiMode(false);
+                    setAiQuery("");
+                    setAiError("");
+                  }}
+                  title="Back to normal search"
+                >
+                  ✕ AI
+                </Button>
+
+                {/* SEARCH BUTTON */}
+                <Button type="submit" className="vmdb-search-btn">
+                  🔍
+                </Button>
+              </InputGroup>
+            </Form>
+          )}
         </div>
       </Container>
     </ReactNavbar>
   );
 }
-
-const styles = {
-  filterMenu: {
-    padding: "12px",
-    minWidth: "240px",
-  },
-  filterGroup: {
-    marginBottom: "12px",
-  },
-  filterLabel: {
-    fontSize: "13px",
-    fontWeight: "600",
-    marginBottom: "6px",
-    color: "#fff",
-  },
-  applyButton: {
-    width: "100%",
-    marginTop: "8px",
-  },
-};

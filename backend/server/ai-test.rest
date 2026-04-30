@@ -1,0 +1,7 @@
+### Test AI Movie Recommendation Route
+POST http://localhost:8081/ai/recommend
+Content-Type: application/json
+
+{
+  "description": "An ogre defends his swamp"
+}

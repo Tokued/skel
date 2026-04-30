@@ -1,10 +1,17 @@
+/* ═══════════════════════════════════════════════════════════ */
+/* NAVBAR CONTAINER */
+/* ═══════════════════════════════════════════════════════════ */
 .vmdb-navbar {
-  background-color: transparent !important;
-  height: 64px;
-  padding: 0 16px;
+  background: linear-gradient(135deg, #0a0e27 0%, #141829 100%) !important;
+  height: 70px;
+  padding: 0 24px;
   display: flex;
   align-items: center;
-  border-bottom: none;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 212, 255, 0.05);
 }
 
 .vmdb-navbar-container {
@@ -12,15 +19,20 @@
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: 64px;
+  min-height: 70px;
   padding: 0 !important;
+  overflow: visible !important;
 }
 
+/* ═══════════════════════════════════════════════════════════ */
+/* LEFT SECTION (Logo + Menu) */
+/* ═══════════════════════════════════════════════════════════ */
 .vmdb-navbar-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   z-index: 2;
+  flex-shrink: 0;
 }
 
 .vmdb-logo-link {
@@ -28,200 +40,203 @@
   align-items: center;
   height: 100%;
   text-decoration: none;
-  margin-left: 8px;   /* 👈 move logo right */
 }
 
 .vmdb-logo {
-  height: 100%;
-  max-height: 62px;
+  height: 60px;
   width: auto;
   object-fit: contain;
   display: block;
+  transition: transform 0.3s ease;
 }
 
-.vmdb-menu-dropdown .dropdown-menu {
-  background-color: #1b1b1b;
-  border: 1px solid #333;
-  z-index: 99999 !important;
-  position: absolute !important;
+.vmdb-logo-link:hover .vmdb-logo {
+  transform: scale(1.05);
 }
-.vmdb-filters-button .dropdown-toggle {
-  background: transparent !important;
-  border: none !important;
-  color: white !important;
+
+/* ─── Menu Dropdown ─── */
+.vmdb-navbar-left .navbar-nav .nav-link {
+  color: #e0e0e0 !important;
   font-weight: 600;
-  padding: 0.4rem 0.75rem;
-  box-shadow: none !important;
-  white-space: nowrap;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
-.vmdb-filters-button .dropdown-toggle::after {
-  margin-left: 6px;
+.vmdb-navbar-left .navbar-nav .nav-link:hover {
+  color: #00d4ff !important;
 }
 
-.vmdb-filters-button {
-  margin-right: 14px;
-  flex-shrink: 0;
+.vmdb-navbar-left .dropdown-menu {
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  padding: 8px 0;
 }
 
-.vmdb-menu-dropdown .dropdown-menu {
-  background-color: #1b1b1b;
-  border: 1px solid #333;
+.vmdb-navbar-left .dropdown-item {
+  color: #e0e0e0;
+  padding: 10px 20px;
+  transition: all 0.2s ease;
+  font-weight: 500;
 }
 
-.vmdb-menu-dropdown .dropdown-item {
-  color: white;
+.vmdb-navbar-left .dropdown-item:hover {
+  background: rgba(0, 212, 255, 0.1);
+  color: #00d4ff;
+  padding-left: 24px;
 }
 
-.vmdb-menu-dropdown .dropdown-item:hover {
-  background-color: #2a2a2a;
-  color: white;
-}
-
+/* ═══════════════════════════════════════════════════════════ */
+/* CENTER SECTION (Search Bar) */
+/* ═══════════════════════════════════════════════════════════ */
 .vmdb-navbar-center {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  width: min(720px, 58vw);
-  z-index: 1;
+  width: min(650px, 55vw);
+  z-index: 2000;
+  overflow: visible !important;
 }
 
 .vmdb-search-form {
   width: 100%;
+  position: relative;
 }
+
 .vmdb-search-form .input-group {
   display: flex;
   align-items: center;
+  background: rgba(15, 20, 40, 0.6);
+  border: 1.5px solid rgba(0, 212, 255, 0.2);
+  border-radius: 50px;
+  backdrop-filter: blur(10px);
+  padding: 2px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
-.vmdb-search-category {
-  max-width: 95px;
-  background-color: #f5f5f5;
-  font-weight: 500;
+.vmdb-search-form .input-group:focus-within {
+  border-color: rgba(0, 212, 255, 0.5);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.1);
+  background: rgba(15, 20, 40, 0.8);
 }
 
-.vmdb-search-input {
-  border-left: none;
-  border-right: none;
-  min-width: 0;
-}
-
-.vmdb-search-button {
+/* ─── Filters Button ─── */
+.vmdb-filters-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #a0a8c0 !important;
+  padding: 8px 16px !important;
   font-weight: 600;
-  padding-left: 18px;
-  padding-right: 18px;
-}
-
-.vmdb-suggestions-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  background-color: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 10px;
-  overflow: hidden;
-  z-index: 9999;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
-}
-
-.vmdb-suggestion-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+  transition: all 0.3s ease;
   cursor: pointer;
-  border-bottom: 1px solid #2a2a2a;
-}
-
-.vmdb-suggestion-item:last-child {
-  border-bottom: none;
-}
-
-.vmdb-suggestion-item:hover {
-  background-color: #252525;
-}
-
-.vmdb-suggestion-poster {
-  width: 42px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.vmdb-suggestion-no-poster {
-  width: 42px;
-  height: 60px;
-  background-color: #333;
-  color: #bbb;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  border-radius: 6px;
+  gap: 6px;
+  margin-left: 4px;
 }
 
-.vmdb-suggestion-text {
-  display: flex;
-  flex-direction: column;
+.vmdb-filters-btn:hover {
+  color: #00d4ff !important;
+  background: rgba(0, 212, 255, 0.08) !important;
+  border-radius: 8px;
 }
 
-.vmdb-suggestion-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: white;
+/* ─── Filters Dropdown Menu ─── */
+.vmdb-filters-dropdown {
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+  border: 1.5px solid rgba(0, 212, 255, 0.2);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  padding: 16px;
+  min-width: 280px;
+  z-index: 99999 !important;
 }
 
-.vmdb-suggestion-subtitle {
+.vmdb-filter-group {
+  margin-bottom: 14px;
+}
+
+.vmdb-filter-group:last-child {
+  margin-bottom: 0;
+}
+
+.vmdb-filter-label {
   font-size: 12px;
-  color: #aaa;
-  margin-top: 2px;
-  text-transform: capitalize;
+  font-weight: 700;
+  color: #00d4ff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  display: block;
 }
 
-@media (max-width: 991px) {
-  .vmdb-navbar {
-    height: auto;
-    padding: 8px 12px;
-  }
-
-  .vmdb-navbar-container {
-    position: static;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .vmdb-navbar-center {
-    position: static;
-    transform: none;
-    width: 100%;
-  }
-
-  .vmdb-logo {
-    max-height: 54px;
-  }
-}
-/* ===== FILTER BUTTON SPACING FIX ===== */
-
-.vmdb-filters-button {
-  margin-right: 10px !important;
+.vmdb-filter-select {
+  background: rgba(30, 40, 70, 0.6) !important;
+  color: #e0e0e0 !important;
+  border: 1px solid rgba(0, 212, 255, 0.2) !important;
+  border-radius: 8px;
+  padding: 8px 12px !important;
+  font-size: 13px;
+  width: 100%;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-.vmdb-filters-button .dropdown-toggle {
-  margin-right: 10px !important;
-  border-radius: 6px 0 0 6px !important;
+.vmdb-filter-select:hover {
+  border-color: rgba(0, 212, 255, 0.4) !important;
+  background: rgba(30, 40, 70, 0.8) !important;
 }
 
+.vmdb-filter-select:focus {
+  outline: none;
+  border-color: rgba(0, 212, 255, 0.6) !important;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+  background: rgba(30, 40, 70, 0.9) !important;
+}
+
+.vmdb-apply-filters-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #00d4ff 0%, #0088ff 100%) !important;
+  color: #000 !important;
+  border: none !important;
+  border-radius: 8px;
+  padding: 10px 16px !important;
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 212, 255, 0.2);
+}
+
+.vmdb-apply-filters-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+}
+
+/* ─── Search Input ─── */
 .vmdb-search-input {
-  margin-left: 6px !important;
-}
-.vmdb-search-input::placeholder {
-  color: #aaa; 
+  background: transparent !important;
+  border: none !important;
+  color: #e0e0e0 !important;
+  padding: 10px 14px !important;
+  font-size: 14px;
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  caret-color: #00d4ff;
 }
 
-.vmdb-search-input.error::placeholder {
-  color: #ff6b6b;
+.vmdb-search-input::placeholder {
+  color: #7a8499 !important;
 }
+
 .vmdb-search-input.error {
   color: #ff6b6b !important;
 }
@@ -230,20 +245,282 @@
   color: #ff6b6b !important;
 }
 
-.vmdb-navbar {
-  background-color: transparent !important;
+/* ─── AI Input (AI Mode) ─── */
+.vmdb-ai-input {
+  background: transparent !important;
+  color: #c7f0ff !important;
+  border: none !important;
+  caret-color: #00d4ff;
+  font-style: italic;
 }
 
-.vmdb-navbar-container {
-  overflow: visible !important;
+.vmdb-ai-input::placeholder {
+  color: #5a9fb8 !important;
 }
 
-.vmdb-navbar-center {
-  overflow: visible !important;
-  z-index: 2000;
+.vmdb-ai-input.error::placeholder {
+  color: #ff6b6b !important;
 }
 
-.vmdb-navbar {
-  position: relative;
-  z-index: 1000;
+/* ─── Search Button ─── */
+.vmdb-search-form .input-group .btn {
+  background: transparent !important;
+  border: none !important;
+  color: #a0a8c0 !important;
+  padding: 8px 14px !important;
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.vmdb-search-form .input-group .btn:hover {
+  color: #00d4ff !important;
+  background: rgba(0, 212, 255, 0.08) !important;
+}
+
+/* ─── AI Toggle Button ─── */
+.vmdb-ai-toggle-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #a0a8c0 !important;
+  padding: 8px 14px !important;
+  font-weight: 700;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+
+.vmdb-ai-toggle-btn:hover {
+  color: #00d4ff !important;
+  background: rgba(0, 212, 255, 0.08) !important;
+}
+
+/* AI Mode Active */
+.vmdb-ai-toggle-active {
+  color: #00d4ff !important;
+  background: rgba(0, 212, 255, 0.12) !important;
+}
+
+.vmdb-ai-toggle-active:hover {
+  background: rgba(0, 212, 255, 0.18) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SUGGESTIONS DROPDOWN */
+/* ═══════════════════════════════════════════════════════════ */
+.vmdb-suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+  border: 1.5px solid rgba(0, 212, 255, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 9999;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.vmdb-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+  transition: all 0.2s ease;
+}
+
+.vmdb-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.vmdb-suggestion-item:hover {
+  background: rgba(0, 212, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.vmdb-suggestion-poster {
+  width: 45px;
+  height: 65px;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.vmdb-suggestion-no-poster {
+  width: 45px;
+  height: 65px;
+  background: rgba(0, 212, 255, 0.1);
+  color: #5a8a9a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-align: center;
+  padding: 4px;
+}
+
+.vmdb-suggestion-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.vmdb-suggestion-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e0e0e0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vmdb-suggestion-subtitle {
+  font-size: 11px;
+  color: #7a8499;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* RESPONSIVE DESIGN */
+/* ═══════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .vmdb-navbar {
+    height: 64px;
+    padding: 0 16px;
+  }
+
+  .vmdb-navbar-center {
+    width: min(600px, 60vw);
+  }
+
+  .vmdb-search-form .input-group {
+    padding: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .vmdb-navbar {
+    height: auto;
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+
+  .vmdb-navbar-container {
+    flex-wrap: wrap;
+    gap: 12px;
+    min-height: auto;
+  }
+
+  .vmdb-navbar-left {
+    order: 1;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .vmdb-logo {
+    height: 50px;
+  }
+
+  .vmdb-navbar-center {
+    order: 2;
+    position: static;
+    transform: none;
+    width: 100%;
+  }
+
+  .vmdb-search-form .input-group {
+    flex-wrap: wrap;
+  }
+
+  .vmdb-filters-dropdown {
+    min-width: 250px;
+  }
+}
+
+@media (max-width: 576px) {
+  .vmdb-navbar {
+    padding: 10px 12px;
+  }
+
+  .vmdb-navbar-left {
+    gap: 8px;
+  }
+
+  .vmdb-logo {
+    height: 44px;
+  }
+
+  .vmdb-navbar-center {
+    width: 100%;
+  }
+
+  .vmdb-search-input {
+    font-size: 13px;
+    padding: 8px 10px !important;
+  }
+
+  .vmdb-search-form .input-group .btn {
+    padding: 6px 10px !important;
+    font-size: 12px;
+  }
+
+  .vmdb-filters-dropdown {
+    min-width: 100vw;
+    margin-left: -12px;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .vmdb-suggestion-item {
+    padding: 10px 10px;
+    gap: 10px;
+  }
+
+  .vmdb-suggestion-poster {
+    width: 40px;
+    height: 58px;
+  }
+
+  .vmdb-suggestion-title {
+    font-size: 12px;
+  }
+
+  .vmdb-suggestion-subtitle {
+    font-size: 10px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════ */
+/* SCROLLBAR STYLING */
+/* ═══════════════════════════════════════════════════════════ */
+.vmdb-suggestions-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.vmdb-suggestions-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.vmdb-suggestions-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.2);
+  border-radius: 3px;
+}
+
+.vmdb-suggestions-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 212, 255, 0.4);
 }

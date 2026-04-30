@@ -15,6 +15,7 @@ import Reviews from "./components/pages/Reviews";
 import getUserInfo from "./utilities/decodeJwt";
 import MoviePage from "./components/pages/moviePage";
 import SearchResultsPage from "./components/pages/searchResultsPage";
+import AiSearchResultsPage from "./components/pages/aiSearchResultsPage";
 import AdminDashboard from "./components/pages/AdminDashboard";
 import FavoritesPage from "./components/pages/FavoritesPage";
 import ReviewsPage from "./components/pages/ReviewsPage";
@@ -43,6 +44,7 @@ const App = () => {
           <Route path="/watchlist" element={<WatchlistPage />} />
           <Route path="/movies/:id" element={<MoviePage />} />
           <Route path="/search" element={<SearchResultsPage />} />
+          <Route path="/ai-results" element={<AiSearchResultsPage />} />
           <Route path="/admin" element={<AdminDashboard />} /> 
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
