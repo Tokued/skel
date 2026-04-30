@@ -223,7 +223,7 @@ const AiSearchResultsPage = () => {
                     {movie.year} • {movie.type}
                   </p>
                   {movie.imdbRating && movie.imdbRating !== "N/A" ? (
-                    <p style={styles.rating}>IMDb: {movie.imdbRating}</p>
+                    <p style={styles.rating}></p>
                   ) : null}
                 </div>
               </div>
