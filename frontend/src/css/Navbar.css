@@ -1,526 +1,339 @@
-/* ═══════════════════════════════════════════════════════════ */
-/* NAVBAR CONTAINER */
-/* ═══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────
+   GLOBAL RESET (REMOVE TOP GAP)
+   ───────────────────────────────────────── */
+body {
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────
+   NAVBAR (FULLY INVISIBLE)
+   ───────────────────────────────────────── */
 .vmdb-navbar {
-  background: linear-gradient(135deg, #0a0e27 0%, #141829 100%) !important;
+  background: transparent !important;
+
   height: 70px;
   padding: 0 24px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid rgba(0, 212, 255, 0.1);
-  backdrop-filter: blur(10px);
-  position: relative;
+
+  border: none;
+  box-shadow: none;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+
   z-index: 1000;
-  box-shadow: 0 8px 32px rgba(0, 212, 255, 0.05);
 }
 
 .vmdb-navbar-container {
-  position: relative;
   display: flex;
   align-items: center;
   width: 100%;
   min-height: 70px;
-  padding: 0 !important;
-  overflow: visible !important;
+  position: relative;
+
+  overflow: visible !important; /* ✅ FIX */
 }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* LEFT SECTION (Logo + Menu) */
-/* ═══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────
+   LEFT SECTION
+   ───────────────────────────────────────── */
 .vmdb-navbar-left {
   display: flex;
   align-items: center;
   gap: 20px;
   z-index: 2;
-  flex-shrink: 0;
 }
 
 .vmdb-logo-link {
   display: flex;
   align-items: center;
-  height: 100%;
   text-decoration: none;
 }
 
 .vmdb-logo {
-  height: 60px;
-  width: auto;
-  object-fit: contain;
-  display: block;
+  max-height: 58px;
   transition: transform 0.3s ease;
 }
 
-.vmdb-logo-link:hover .vmdb-logo {
+.vmdb-logo:hover {
   transform: scale(1.05);
 }
 
-/* ─── Menu Dropdown ─── */
-.vmdb-navbar-left .navbar-nav .nav-link {
-  color: #e0e0e0 !important;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.vmdb-navbar-left .navbar-nav .nav-link:hover {
-  color: #00d4ff !important;
-}
-
-.vmdb-navbar-left .dropdown-menu {
-  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  padding: 8px 0;
-}
-
-.vmdb-navbar-left .dropdown-item {
-  color: #e0e0e0;
-  padding: 10px 20px;
-  transition: all 0.2s ease;
-  font-weight: 500;
-}
-
-.vmdb-navbar-left .dropdown-item:hover {
-  background: rgba(0, 212, 255, 0.1);
-  color: #00d4ff;
-  padding-left: 24px;
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/* CENTER SECTION (Search Bar) */
-/* ═══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────
+   CENTER SEARCH (FLOATING)
+   ───────────────────────────────────────── */
 .vmdb-navbar-center {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  width: min(650px, 55vw);
-  z-index: 2000;
-  overflow: visible !important;
+  width: min(700px, 60vw);
+  z-index: 3000;
+
+  overflow: visible !important; /* ✅ FIX */
 }
 
+/* ─────────────────────────────────────────
+   SEARCH FORM
+   ───────────────────────────────────────── */
 .vmdb-search-form {
-  width: 100%;
   position: relative;
+  width: 100%;
+
+  overflow: visible !important; /* ✅ FIX */
 }
 
+/* ─────────────────────────────────────────
+   INPUT GROUP (MAIN BAR)
+   ───────────────────────────────────────── */
 .vmdb-search-form .input-group {
   display: flex;
   align-items: center;
-  background: rgba(15, 20, 40, 0.6);
-  border: 1.5px solid rgba(0, 212, 255, 0.2);
-  border-radius: 50px;
+
+  border-radius: 12px;
+  overflow: visible; /* ✅ important for dropdown */
+
+  background: rgba(20, 25, 35, 0.55);
   backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(0, 212, 255, 0.2);
+
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(0, 212, 255, 0.15);
+
+  gap: 4px;
   padding: 2px;
+
   transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .vmdb-search-form .input-group:focus-within {
-  border-color: rgba(0, 212, 255, 0.5);
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.1);
-  background: rgba(15, 20, 40, 0.8);
+  border-color: rgba(0, 212, 255, 0.7);
+  box-shadow:
+    0 0 20px rgba(0, 212, 255, 0.35),
+    0 10px 35px rgba(0, 0, 0, 0.6);
 }
 
-/* ─── Filters Button ─── */
-.vmdb-filters-btn {
-  background: transparent !important;
-  border: none !important;
-  color: #a0a8c0 !important;
-  padding: 8px 16px !important;
-  font-weight: 600;
-  font-size: 13px;
-  white-space: nowrap;
-  transition: all 0.3s ease;
-  cursor: pointer;
+/* ─────────────────────────────────────────
+   FILTER DROPDOWN (FIXED)
+   ───────────────────────────────────────── */
+.vmdb-search-form .dropdown {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 4px;
+  margin-right: 4px;
+  position: relative;
+  z-index: 5000;
 }
 
-.vmdb-filters-btn:hover {
+.vmdb-search-form .dropdown > .dropdown-toggle {
+  background: transparent !important;
+  border: none !important;
+  color: #9fb3c8 !important;
+  font-weight: 600;
+  padding: 0.55rem 0.9rem;
+  font-size: 13px;
+
+  flex-shrink: 0;
+}
+
+.vmdb-search-form .dropdown > .dropdown-toggle:hover {
   color: #00d4ff !important;
   background: rgba(0, 212, 255, 0.08) !important;
-  border-radius: 8px;
 }
 
-/* ─── Filters Dropdown Menu ─── */
-.vmdb-filters-dropdown {
-  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
-  border: 1.5px solid rgba(0, 212, 255, 0.2);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  padding: 16px;
-  min-width: 280px;
+.vmdb-search-form .dropdown-menu {
+  background: rgba(15, 20, 30, 0.95) !important;
+  backdrop-filter: blur(14px);
+
+  border-radius: 10px !important;
+  border: 1px solid rgba(0, 212, 255, 0.15) !important;
+
   z-index: 99999 !important;
+  position: absolute !important;
 }
 
-.vmdb-filter-group {
-  margin-bottom: 14px;
-}
-
-.vmdb-filter-group:last-child {
-  margin-bottom: 0;
-}
-
-.vmdb-filter-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #00d4ff;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 8px;
-  display: block;
-}
-
-.vmdb-filter-select {
-  background: rgba(30, 40, 70, 0.6) !important;
-  color: #e0e0e0 !important;
-  border: 1px solid rgba(0, 212, 255, 0.2) !important;
-  border-radius: 8px;
-  padding: 8px 12px !important;
-  font-size: 13px;
-  width: 100%;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.vmdb-filter-select:hover {
-  border-color: rgba(0, 212, 255, 0.4) !important;
-  background: rgba(30, 40, 70, 0.8) !important;
-}
-
-.vmdb-filter-select:focus {
-  outline: none;
-  border-color: rgba(0, 212, 255, 0.6) !important;
-  box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
-  background: rgba(30, 40, 70, 0.9) !important;
-}
-
-.vmdb-apply-filters-btn {
-  width: 100%;
-  background: linear-gradient(135deg, #00d4ff 0%, #0088ff 100%) !important;
-  color: #000 !important;
-  border: none !important;
-  border-radius: 8px;
-  padding: 10px 16px !important;
-  font-weight: 700;
-  font-size: 13px;
-  margin-top: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 16px rgba(0, 212, 255, 0.2);
-}
-
-.vmdb-apply-filters-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
-}
-
-/* ─── Search Input ─── */
+/* ─────────────────────────────────────────
+   SEARCH INPUT
+   ───────────────────────────────────────── */
 .vmdb-search-input {
   background: transparent !important;
   border: none !important;
-  color: #e0e0e0 !important;
-  padding: 10px 14px !important;
-  font-size: 14px;
+  color: #e6f0ff !important;
+  padding: 0.6rem 0.75rem;
+
   flex: 1;
   min-width: 0;
-  outline: none;
-  caret-color: #00d4ff;
+
+  position: relative;
+  z-index: 1;
 }
 
 .vmdb-search-input::placeholder {
-  color: #7a8499 !important;
+  color: #6f7c91;
 }
 
-.vmdb-search-input.error {
-  color: #ff6b6b !important;
+.vmdb-search-input:focus {
+  outline: none;
 }
 
-.vmdb-search-input.error::placeholder {
-  color: #ff6b6b !important;
-}
-
-/* ─── AI Input (AI Mode) ─── */
+/* ─────────────────────────────────────────
+   AI INPUT
+   ───────────────────────────────────────── */
 .vmdb-ai-input {
-  background: transparent !important;
-  color: #c7f0ff !important;
-  border: none !important;
-  caret-color: #00d4ff;
-  font-style: italic;
+  background: linear-gradient(
+    to right,
+    rgba(0, 212, 255, 0.08),
+    rgba(0, 100, 255, 0.08)
+  ) !important;
+  color: #00d4ff !important;
 }
 
 .vmdb-ai-input::placeholder {
-  color: #5a9fb8 !important;
+  color: #4aa3c0 !important;
+  font-style: italic;
 }
 
-.vmdb-ai-input.error::placeholder {
-  color: #ff6b6b !important;
-}
-
-/* ─── Search Button ─── */
-.vmdb-search-form .input-group .btn {
-  background: transparent !important;
+/* ─────────────────────────────────────────
+   BUTTONS
+   ───────────────────────────────────────── */
+.vmdb-search-form .btn {
   border: none !important;
-  color: #a0a8c0 !important;
-  padding: 8px 14px !important;
-  font-weight: 600;
+  background: transparent !important;
+  color: #9fb3c8 !important;
+  padding: 0.5rem 0.9rem;
   font-size: 13px;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  cursor: pointer;
+
+  flex-shrink: 0;
+  transition: all 0.25s ease;
 }
 
-.vmdb-search-form .input-group .btn:hover {
+.vmdb-search-form .btn:hover {
   color: #00d4ff !important;
-  background: rgba(0, 212, 255, 0.08) !important;
+  background: rgba(0, 212, 255, 0.1) !important;
 }
 
-/* ─── AI Toggle Button ─── */
+/* ─────────────────────────────────────────
+   AI TOGGLE
+   ───────────────────────────────────────── */
 .vmdb-ai-toggle-btn {
-  background: transparent !important;
-  border: none !important;
-  color: #a0a8c0 !important;
-  padding: 8px 14px !important;
-  font-weight: 700;
-  font-size: 12px;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  cursor: pointer;
-  letter-spacing: 0.05em;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px;
 }
 
-.vmdb-ai-toggle-btn:hover {
-  color: #00d4ff !important;
-  background: rgba(0, 212, 255, 0.08) !important;
-}
-
-/* AI Mode Active */
 .vmdb-ai-toggle-active {
-  color: #00d4ff !important;
-  background: rgba(0, 212, 255, 0.12) !important;
+  color: #fff !important;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 212, 255, 0.25),
+    rgba(0, 100, 255, 0.25)
+  ) !important;
+
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
 }
 
-.vmdb-ai-toggle-active:hover {
-  background: rgba(0, 212, 255, 0.18) !important;
-}
-
-/* ═══════════════════════════════════════════════════════════ */
-/* SUGGESTIONS DROPDOWN */
-/* ═══════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────
+   SUGGESTIONS DROPDOWN
+   ───────────────────────────────────────── */
 .vmdb-suggestions-dropdown {
   position: absolute;
-  top: calc(100% + 12px);
+  top: calc(100% + 10px);
   left: 0;
   right: 0;
-  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
-  border: 1.5px solid rgba(0, 212, 255, 0.2);
-  border-radius: 12px;
+
+  background: rgba(15, 20, 30, 0.85);
+  backdrop-filter: blur(16px);
+
+  border-radius: 14px;
+  border: 1px solid rgba(0, 212, 255, 0.15);
+
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   overflow: hidden;
-  z-index: 9999;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-  max-height: 400px;
-  overflow-y: auto;
+  z-index: 9000;
 }
 
 .vmdb-suggestion-item {
   display: flex;
-  align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  cursor: pointer;
-  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
   transition: all 0.2s ease;
-}
-
-.vmdb-suggestion-item:last-child {
-  border-bottom: none;
 }
 
 .vmdb-suggestion-item:hover {
   background: rgba(0, 212, 255, 0.08);
-  transform: translateX(4px);
-}
-
-.vmdb-suggestion-poster {
-  width: 45px;
-  height: 65px;
-  object-fit: cover;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.vmdb-suggestion-no-poster {
-  width: 45px;
-  height: 65px;
-  background: rgba(0, 212, 255, 0.1);
-  color: #5a8a9a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  border-radius: 6px;
-  font-weight: 600;
-  text-align: center;
-  padding: 4px;
-}
-
-.vmdb-suggestion-text {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
+  transform: translateX(6px);
 }
 
 .vmdb-suggestion-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #e0e0e0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #e6f0ff;
+  font-weight: 600;
 }
 
 .vmdb-suggestion-subtitle {
-  font-size: 11px;
-  color: #7a8499;
-  margin-top: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #7f8ea3;
 }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* RESPONSIVE DESIGN */
-/* ═══════════════════════════════════════════════════════════ */
-@media (max-width: 1024px) {
-  .vmdb-navbar {
-    height: 64px;
-    padding: 0 16px;
-  }
-
-  .vmdb-navbar-center {
-    width: min(600px, 60vw);
-  }
-
-  .vmdb-search-form .input-group {
-    padding: 0;
-  }
+/* ─────────────────────────────────────────
+   MENU DROPDOWN
+   ───────────────────────────────────────── */
+.dropdown-menu {
+  background: rgba(15, 20, 30, 0.9) !important;
+  backdrop-filter: blur(14px);
+  border-radius: 10px !important;
+  border: 1px solid rgba(0, 212, 255, 0.15) !important;
 }
 
-@media (max-width: 768px) {
-  .vmdb-navbar {
-    height: auto;
-    padding: 12px 16px;
-    flex-wrap: wrap;
-  }
+.dropdown-item:hover {
+  background: rgba(0, 212, 255, 0.1) !important;
+  color: #00d4ff !important;
+}
 
-  .vmdb-navbar-container {
-    flex-wrap: wrap;
-    gap: 12px;
-    min-height: auto;
-  }
-
-  .vmdb-navbar-left {
-    order: 1;
-    width: 100%;
-    justify-content: flex-start;
-    gap: 12px;
-  }
-
-  .vmdb-logo {
-    height: 50px;
-  }
-
+/* ─────────────────────────────────────────
+   RESPONSIVE
+   ───────────────────────────────────────── */
+@media (max-width: 992px) {
   .vmdb-navbar-center {
-    order: 2;
     position: static;
     transform: none;
     width: 100%;
-  }
-
-  .vmdb-search-form .input-group {
-    flex-wrap: wrap;
-  }
-
-  .vmdb-filters-dropdown {
-    min-width: 250px;
+    margin-top: 10px;
   }
 }
 
-@media (max-width: 576px) {
-  .vmdb-navbar {
-    padding: 10px 12px;
-  }
+/* ─────────────────────────────────────────
+   FILTER DROPDOWN (RESTORE ORIGINAL STYLE ONLY)
+   ───────────────────────────────────────── */
 
-  .vmdb-navbar-left {
-    gap: 8px;
-  }
+/* dropdown container */
+.vmdb-search-form .dropdown-menu {
+  background-color: rgba(27, 27, 27, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
 
-  .vmdb-logo {
-    height: 44px;
-  }
+  border: 1px solid rgba(0, 212, 255, 0.2) !important;
+  border-radius: 8px !important;
 
-  .vmdb-navbar-center {
-    width: 100%;
-  }
+  margin-top: 8px !important;
 
-  .vmdb-search-input {
-    font-size: 13px;
-    padding: 8px 10px !important;
-  }
-
-  .vmdb-search-form .input-group .btn {
-    padding: 6px 10px !important;
-    font-size: 12px;
-  }
-
-  .vmdb-filters-dropdown {
-    min-width: 100vw;
-    margin-left: -12px;
-    border-radius: 0 0 12px 12px;
-  }
-
-  .vmdb-suggestion-item {
-    padding: 10px 10px;
-    gap: 10px;
-  }
-
-  .vmdb-suggestion-poster {
-    width: 40px;
-    height: 58px;
-  }
-
-  .vmdb-suggestion-title {
-    font-size: 12px;
-  }
-
-  .vmdb-suggestion-subtitle {
-    font-size: 10px;
-  }
+  /* keep it from becoming “too fancy” */
+  box-shadow: none !important;
+  min-width: 180px !important;
+  padding: 4px 0 !important;
 }
 
-/* ═══════════════════════════════════════════════════════════ */
-/* SCROLLBAR STYLING */
-/* ═══════════════════════════════════════════════════════════ */
-.vmdb-suggestions-dropdown::-webkit-scrollbar {
-  width: 6px;
+/* dropdown items inside */
+.vmdb-search-form .dropdown-menu .dropdown-item {
+  color: #ffffff !important;
+  font-size: 13px !important;
+
+  padding: 8px 12px !important;
+  transition: none !important;
 }
 
-.vmdb-suggestions-dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.vmdb-suggestions-dropdown::-webkit-scrollbar-thumb {
-  background: rgba(0, 212, 255, 0.2);
-  border-radius: 3px;
-}
-
-.vmdb-suggestions-dropdown::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 212, 255, 0.4);
+/* hover state (match original feel) */
+.vmdb-search-form .dropdown-menu .dropdown-item:hover {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  transform: none !important;
 }
