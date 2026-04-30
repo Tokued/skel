@@ -23,7 +23,7 @@ You are a movie recommendation engine.
 User description:
 "${description}"
 
-Return ONLY a valid JSON array of 5 real movie titles.
+Return ONLY a valid JSON array of 10 real movie titles.
 
 Rules:
 - No explanations
@@ -32,7 +32,7 @@ Rules:
 - No extra text
 
 Example:
-["Inception", "The Matrix", "Interstellar", "Fight Club", "The Dark Knight"]
+["Inception", "The Matrix", "Interstellar", "Fight Club", "The Dark Knight", "Pulp Fiction", "The Lord of the Rings: The Fellowship of the Ring", "The Shawshank Redemption", "The Godfather", "Forrest Gump"]
 `;
 
     const response = await axios.post(
@@ -78,7 +78,7 @@ Example:
     }
 
     if (!Array.isArray(movies)) movies = [];
-    movies = movies.slice(0, 5);
+    movies = movies.slice(0, 10);
 
     return res.json({ movies });
   } catch (err) {
