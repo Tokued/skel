@@ -406,7 +406,7 @@ const WatchlistPage = () => {
                             style={starContainer}
                           >
                             <div style={{ fontSize: 12, color: "#aaa", marginBottom: 6 }}>
-                              Rate this movie
+                              Make your rating:
                             </div>
                             <div style={{ display: "flex", gap: 6 }}>
                               {[1, 2, 3, 4, 5].map((star) => {
@@ -459,7 +459,7 @@ const WatchlistPage = () => {
 
                     {item?.rating && (
                       <div style={{ fontSize: 13, color: "#aaa" }}>
-                        Rated: {item.rating}/5 ⭐
+                        Personal Rating: {item.rating}/5 ⭐
                       </div>
                     )}
                   </div>
