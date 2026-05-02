@@ -23,13 +23,14 @@ You are a movie recommendation engine.
 User description:
 "${description}"
 
-Return ONLY a valid JSON array of 10 real movie titles.
+Return ONLY a valid JSON array of 30 distinct real movie titles that fit the description.
 
 Rules:
 - No explanations
 - No markdown
 - No code blocks
 - No extra text
+- No Duplicates
 
 Example:
 ["Inception", "The Matrix", "Interstellar", "Fight Club", "The Dark Knight", "Pulp Fiction", "The Lord of the Rings: The Fellowship of the Ring", "The Shawshank Redemption", "The Godfather", "Forrest Gump"]
@@ -78,7 +79,7 @@ Example:
     }
 
     if (!Array.isArray(movies)) movies = [];
-    movies = movies.slice(0, 10);
+    movies = movies.slice(0, 30);
 
     return res.json({ movies });
   } catch (err) {
