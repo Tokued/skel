@@ -23,7 +23,7 @@ const newUserSchema = new mongoose.Schema(
       default: Date.now,
     },
 
-    // ✅ ADD THESE (admin system)
+    // admin system
     isAdmin: {
       type: Boolean,
       default: false,
@@ -37,9 +37,17 @@ const newUserSchema = new mongoose.Schema(
       default: false,
     },
 
+    // ⭐ REQUIRED FOR PROFILE SYSTEM ⭐
+    avatarUrl: {
+      type: String,
+      default: null,
+    },
+    backgroundUrl: {
+      type: String,
+      default: null,
+    },
   },
   { collection: "users" }
 );
 
-// ✅ FIX: must be "User" (not "users") for populate to work
 module.exports = mongoose.model("User", newUserSchema);
