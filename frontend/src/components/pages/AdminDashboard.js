@@ -392,12 +392,20 @@ export default function AdminDashboard() {
                         </p>
                       </div>
 
-                      <button
-                        onClick={() => unflagReview(review._id)}
-                        style={styles.btnUnwarn}
-                      >
-                        ✅ Unflag
-                      </button>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button
+                          onClick={() => unflagReview(review._id)}
+                          style={styles.btnUnwarn}
+                        >
+                          ✅ Unflag
+                        </button>
+                        <button
+                          onClick={() => deleteReview(review._id)}
+                          style={styles.btnDelete}
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
