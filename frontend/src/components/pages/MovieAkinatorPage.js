@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../css/MovieAkinator.css";
+import viking1 from "../../assets/viking1.png";
+import viking2 from "../../assets/viking2.png";
 
 const BACKEND_URL =
   process.env.REACT_APP_BACKEND_SERVER_URI || "http://localhost:8081";
@@ -101,7 +103,10 @@ function buildQuestions(movies) {
       weight: 12,
       test: (movie) =>
         movie.belongsToCollection ||
-        hasText(movie, /sequel|franchise|trilogy|saga|chapter|part|episode|cinematic universe/i) ||
+        hasText(
+          movie,
+          /sequel|franchise|trilogy|saga|chapter|part|episode|cinematic universe/i
+        ) ||
         /(:|2|3|4|5|ii|iii|iv|v|returns|rises|rise|final|legacy|resurrection|revenge|awakens)/i.test(
           movie.title || ""
         ),
@@ -112,7 +117,10 @@ function buildQuestions(movies) {
       weight: 12,
       test: (movie) =>
         movie.genreIds?.includes(878) &&
-        hasText(movie, /space|spaceship|spacecraft|galaxy|planet|intergalactic|cosmic|black hole|alien|orbit|mission/i),
+        hasText(
+          movie,
+          /space|spaceship|spacecraft|galaxy|planet|intergalactic|cosmic|black hole|alien|orbit|mission/i
+        ),
     },
     {
       id: "space-horror",
@@ -120,41 +128,57 @@ function buildQuestions(movies) {
       weight: 16,
       test: (movie) =>
         movie.genreIds?.includes(27) &&
-        hasText(movie, /space|spaceship|spacecraft|galaxy|planet|alien|cosmic|black hole|dimension|orbit|mission/i),
+        hasText(
+          movie,
+          /space|spaceship|spacecraft|galaxy|planet|alien|cosmic|black hole|dimension|orbit|mission/i
+        ),
     },
     {
       id: "sci-fi-horror",
       text: "Is it both sci-fi and horror?",
       weight: 15,
-      test: (movie) => movie.genreIds?.includes(878) && movie.genreIds?.includes(27),
+      test: (movie) =>
+        movie.genreIds?.includes(878) && movie.genreIds?.includes(27),
     },
     {
       id: "psychological",
       text: "Is it psychological, disturbing, or mind-bending?",
       weight: 12,
       test: (movie) =>
-        hasText(movie, /psychological|hallucination|madness|paranoia|nightmare|surreal|mind|trauma|disturbing|insanity/i),
+        hasText(
+          movie,
+          /psychological|hallucination|madness|paranoia|nightmare|surreal|mind|trauma|disturbing|insanity/i
+        ),
     },
     {
       id: "school",
       text: "Does it take place in a school, college, or academic setting?",
       weight: 16,
       test: (movie) =>
-        hasText(movie, /school|teacher|student|professor|college|academy|classroom|boarding school|education|prep school/i),
+        hasText(
+          movie,
+          /school|teacher|student|professor|college|academy|classroom|boarding school|education|prep school/i
+        ),
     },
     {
       id: "teacher-mentor",
       text: "Does it involve a teacher, mentor, coach, or authority figure?",
       weight: 13,
       test: (movie) =>
-        hasText(movie, /teacher|mentor|professor|coach|leader|authority|education|inspire|lesson/i),
+        hasText(
+          movie,
+          /teacher|mentor|professor|coach|leader|authority|education|inspire|lesson/i
+        ),
     },
     {
       id: "coming-of-age",
       text: "Is it a coming-of-age story?",
       weight: 12,
       test: (movie) =>
-        hasText(movie, /coming of age|teenager|youth|adolescence|growing up|high school|student|young/i),
+        hasText(
+          movie,
+          /coming of age|teenager|youth|adolescence|growing up|high school|student|young/i
+        ),
     },
     {
       id: "emotional-drama",
@@ -162,7 +186,10 @@ function buildQuestions(movies) {
       weight: 11,
       test: (movie) =>
         movie.genreIds?.includes(18) &&
-        hasText(movie, /inspirational|emotional|friendship|mentor|life lesson|dream|tragedy|hope|poetry|family/i),
+        hasText(
+          movie,
+          /inspirational|emotional|friendship|mentor|life lesson|dream|tragedy|hope|poetry|family/i
+        ),
     },
     {
       id: "realistic",
@@ -179,21 +206,30 @@ function buildQuestions(movies) {
       text: "Does it involve superheroes or comic book characters?",
       weight: 14,
       test: (movie) =>
-        hasText(movie, /superhero|super power|marvel|dc comics|comic book|masked vigilante|hero|villain/i),
+        hasText(
+          movie,
+          /superhero|super power|marvel|dc comics|comic book|masked vigilante|hero|villain/i
+        ),
     },
     {
       id: "monster",
       text: "Does it involve monsters, creatures, aliens, zombies, or demons?",
       weight: 13,
       test: (movie) =>
-        hasText(movie, /monster|creature|alien|zombie|vampire|werewolf|ghost|demon|kaiju|virus|possession/i),
+        hasText(
+          movie,
+          /monster|creature|alien|zombie|vampire|werewolf|ghost|demon|kaiju|virus|possession/i
+        ),
     },
     {
       id: "slasher",
       text: "Is it a slasher or killer movie?",
       weight: 12,
       test: (movie) =>
-        hasText(movie, /slasher|serial killer|masked killer|killer|murder|stalker|psychopath/i),
+        hasText(
+          movie,
+          /slasher|serial killer|masked killer|killer|murder|stalker|psychopath/i
+        ),
     },
     {
       id: "true-story",
@@ -202,7 +238,10 @@ function buildQuestions(movies) {
       test: (movie) =>
         movie.genreIds?.includes(36) ||
         movie.genreIds?.includes(10752) ||
-        hasText(movie, /based on true story|biography|historical|war|history|true crime|real life/i),
+        hasText(
+          movie,
+          /based on true story|biography|historical|war|history|true crime|real life/i
+        ),
     },
     {
       id: "war-conflict",
@@ -210,14 +249,18 @@ function buildQuestions(movies) {
       weight: 10,
       test: (movie) =>
         movie.genreIds?.includes(10752) ||
-        hasText(movie, /war|rebellion|resistance|empire|battle|army|soldier|conflict/i),
+        hasText(
+          movie,
+          /war|rebellion|resistance|empire|battle|army|soldier|conflict/i
+        ),
     },
     {
       id: "romantic",
       text: "Is romance a major part of it?",
       weight: 9,
       test: (movie) =>
-        movie.genreIds?.includes(10749) || hasText(movie, /romance|love|relationship|marriage|couple/i),
+        movie.genreIds?.includes(10749) ||
+        hasText(movie, /romance|love|relationship|marriage|couple/i),
     },
     {
       id: "funny",
@@ -240,14 +283,20 @@ function buildQuestions(movies) {
       weight: 12,
       test: (movie) =>
         movie.genreIds?.includes(10402) ||
-        hasText(movie, /music|musician|band|singer|dance|performance|artist|poetry|writer|theater|stage/i),
+        hasText(
+          movie,
+          /music|musician|band|singer|dance|performance|artist|poetry|writer|theater|stage/i
+        ),
     },
     {
       id: "sports",
       text: "Is it about sports or competition?",
       weight: 11,
       test: (movie) =>
-        hasText(movie, /sport|boxing|football|basketball|baseball|wrestling|competition|tournament|race|athlete|coach/i),
+        hasText(
+          movie,
+          /sport|boxing|football|basketball|baseball|wrestling|competition|tournament|race|athlete|coach/i
+        ),
     },
     {
       id: "crime",
@@ -256,7 +305,10 @@ function buildQuestions(movies) {
       test: (movie) =>
         movie.genreIds?.includes(80) ||
         movie.genreIds?.includes(9648) ||
-        hasText(movie, /crime|detective|police|murder|investigation|case|criminal|heist|robbery/i),
+        hasText(
+          movie,
+          /crime|detective|police|murder|investigation|case|criminal|heist|robbery/i
+        ),
     },
     {
       id: "runtime-long",
@@ -280,7 +332,8 @@ function buildQuestions(movies) {
       id: "very-popular",
       text: "Is it very popular or well-known?",
       weight: 6,
-      test: (movie) => Number(movie.popularity) >= 80 || Number(movie.voteCount) >= 5000,
+      test: (movie) =>
+        Number(movie.popularity) >= 80 || Number(movie.voteCount) >= 5000,
     }
   );
 
@@ -422,6 +475,15 @@ export default function MovieAkinatorPage() {
   const [answerHistory, setAnswerHistory] = useState([]);
   const [finished, setFinished] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [vikingFrame, setVikingFrame] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVikingFrame((prev) => (prev === 0 ? 1 : 0));
+    }, 650);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchMoviePool = async () => {
@@ -477,34 +539,34 @@ export default function MovieAkinatorPage() {
   }, [movies]);
 
   const goToMoviePage = async (movie) => {
-  try {
-    let imdbId = movie.imdbID || movie.imdbId || movie.imdb_id;
+    try {
+      let imdbId = movie.imdbID || movie.imdbId || movie.imdb_id;
 
-    if (!imdbId && movie.tmdbID) {
-      const tmdbRes = await axios.get(
-        `https://api.themoviedb.org/3/movie/${movie.tmdbID}/external_ids`,
-        {
-          params: {
-            api_key: process.env.REACT_APP_TMDB_API_KEY,
-          },
-        }
-      );
+      if (!imdbId && movie.tmdbID) {
+        const tmdbRes = await axios.get(
+          `https://api.themoviedb.org/3/movie/${movie.tmdbID}/external_ids`,
+          {
+            params: {
+              api_key: process.env.REACT_APP_TMDB_API_KEY,
+            },
+          }
+        );
 
-      imdbId = tmdbRes.data?.imdb_id;
+        imdbId = tmdbRes.data?.imdb_id;
+      }
+
+      if (!imdbId) {
+        console.error("No IMDB ID found for movie:", movie);
+        alert("Movie page could not open because no IMDB ID was found.");
+        return;
+      }
+
+      navigate(`/movies/${imdbId}`);
+    } catch (err) {
+      console.error("Failed to open movie page:", err);
+      alert("Could not open this movie page.");
     }
-
-    if (!imdbId) {
-      console.error("No IMDB ID found for movie:", movie);
-      alert("Movie page could not open because no IMDB ID was found.");
-      return;
-    }
-
-    navigate(`/movies/${imdbId}`);
-  } catch (err) {
-    console.error("Failed to open movie page:", err);
-    alert("Could not open this movie page.");
-  }
-};
+  };
 
   const handleAnswer = (answer) => {
     if (!currentQuestion) {
@@ -563,93 +625,107 @@ export default function MovieAkinatorPage() {
 
   return (
     <div className="akinator-page">
-      <div className="akinator-card">
-        <h1>Movie Akinator</h1>
+      <div className="akinator-stage">
+        <div className="akinator-viking-side">
+          <img
+            src={vikingFrame === 0 ? viking1 : viking2}
+            alt="VMDB Viking"
+            className="akinator-viking-sprite"
+          />
 
-        <p className="akinator-subtitle">
-          Answer questions and VMDB will narrow movies like Akinator using
-          weighted clues instead of deleting guesses too early.
-        </p>
+          <div className="akinator-viking-bubble">
+            {finished ? "My guess is ready." : "Hmm... thinking."}
+          </div>
+        </div>
 
-        {!finished && currentQuestion ? (
-          <>
-            <p className="akinator-progress">
-              Question {askedQuestionIds.length + 1} • Possible movies:{" "}
-              {activeCount}
-            </p>
+        <div className="akinator-card">
+          <h1>Movie Akinator</h1>
 
-            <h2>{currentQuestion.text}</h2>
+          <p className="akinator-subtitle">
+            Answer questions and VMDB will narrow movies like Akinator using
+            weighted clues instead of deleting guesses too early.
+          </p>
 
-            <div className="akinator-buttons">
-              <button onClick={() => handleAnswer("yes")}>Yes</button>
-              <button onClick={() => handleAnswer("no")}>No</button>
-              <button onClick={() => handleAnswer("maybe")}>Not Sure</button>
-            </div>
-
-            {topResults.length > 0 ? (
-              <p className="akinator-count">
-                Current best guess: {topResults[0].title}
+          {!finished && currentQuestion ? (
+            <>
+              <p className="akinator-progress">
+                Question {askedQuestionIds.length + 1} • Possible movies:{" "}
+                {activeCount}
               </p>
-            ) : null}
 
-            {answerHistory.length > 0 ? (
-              <div className="akinator-history">
-                <h4>Previous answers</h4>
-                {answerHistory.slice(-5).map((item, index) => (
-                  <p key={index}>
-                    {item.answer.toUpperCase()} — {item.question}{" "}
-                    <span>
-                      ({item.beforeCount} → {item.afterCount})
-                    </span>
-                  </p>
+              <h2>{currentQuestion.text}</h2>
+
+              <div className="akinator-buttons">
+                <button onClick={() => handleAnswer("yes")}>Yes</button>
+                <button onClick={() => handleAnswer("no")}>No</button>
+                <button onClick={() => handleAnswer("maybe")}>Not Sure</button>
+              </div>
+
+              {topResults.length > 0 ? (
+                <p className="akinator-count">
+                  Current best guess: {topResults[0].title}
+                </p>
+              ) : null}
+
+              {answerHistory.length > 0 ? (
+                <div className="akinator-history">
+                  <h4>Previous answers</h4>
+                  {answerHistory.slice(-5).map((item, index) => (
+                    <p key={index}>
+                      {item.answer.toUpperCase()} — {item.question}{" "}
+                      <span>
+                        ({item.beforeCount} → {item.afterCount})
+                      </span>
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <h2>I think it might be...</h2>
+              <p className="akinator-count">Confidence: {confidence}%</p>
+
+              <div className="akinator-results">
+                {topResults.map((movie) => (
+                  <div
+                    className="akinator-movie-card"
+                    key={movie.imdbID || movie.tmdbID || movie.id}
+                    onClick={() => goToMoviePage(movie)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") goToMoviePage(movie);
+                    }}
+                  >
+                    <img src={movie.poster} alt={movie.title} />
+
+                    <div>
+                      <h3>{movie.title}</h3>
+                      <p>{movie.year}</p>
+                      <p>Score: {movie.score}</p>
+                      <p>Rating: {Number(movie.rating).toFixed(1)}</p>
+                      {movie.runtime ? <p>{movie.runtime} min</p> : null}
+                      {movie.cast?.length > 0 ? (
+                        <p>
+                          Cast:{" "}
+                          {movie.cast
+                            .slice(0, 2)
+                            .map((a) => a.name || a)
+                            .join(", ")}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
                 ))}
               </div>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <h2>I think it might be...</h2>
-            <p className="akinator-count">Confidence: {confidence}%</p>
 
-            <div className="akinator-results">
-              {topResults.map((movie) => (
-                <div
-                  className="akinator-movie-card"
-                  key={movie.imdbID || movie.tmdbID || movie.id}
-                  onClick={() => goToMoviePage(movie)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") goToMoviePage(movie);
-                  }}
-                >
-                  <img src={movie.poster} alt={movie.title} />
-
-                  <div>
-                    <h3>{movie.title}</h3>
-                    <p>{movie.year}</p>
-                    <p>Score: {movie.score}</p>
-                    <p>Rating: {Number(movie.rating).toFixed(1)}</p>
-                    {movie.runtime ? <p>{movie.runtime} min</p> : null}
-                    {movie.cast?.length > 0 ? (
-                      <p>
-                        Cast:{" "}
-                        {movie.cast
-                          .slice(0, 2)
-                          .map((a) => a.name || a)
-                          .join(", ")}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <button className="akinator-reset" onClick={resetGame}>
-              Play Again
-            </button>
-          </>
-        )}
+              <button className="akinator-reset" onClick={resetGame}>
+                Play Again
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

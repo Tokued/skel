@@ -94,3 +94,64 @@
   margin: 3px 0;
   font-size: 13px;
 }
+
+.akinator-stage {
+  position: relative;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.akinator-viking-side {
+  position: absolute;
+  left: -190px;
+  top: 90px;
+  width: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.akinator-viking-sprite {
+  width: 165px;
+  height: 165px;
+  object-fit: contain;
+  animation: vikingBob 1.4s ease-in-out infinite;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.7));
+}
+
+.akinator-viking-bubble {
+  margin-top: 8px;
+  background: rgba(10, 20, 30, 0.95);
+  border: 1px solid rgba(0, 188, 255, 0.5);
+  color: #dff7ff;
+  padding: 8px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  text-align: center;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes vikingBob {
+  0% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(1deg);
+  }
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+}
+
+@media (max-width: 1150px) {
+  .akinator-viking-side {
+    position: static;
+    margin: 0 auto 18px;
+  }
+
+  .akinator-stage {
+    width: 100%;
+  }
+}
