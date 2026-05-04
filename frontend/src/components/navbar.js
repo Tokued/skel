@@ -262,6 +262,10 @@ export default function Navbar() {
             <NavDropdown.Item as={Link} to="/">
               Register
             </NavDropdown.Item>
+            
+            <NavDropdown.Item as={Link} to="/movie-akinator">
+              Movie Akinator
+            </NavDropdown.Item>
 
             <NavDropdown.Item as={Link} to="/admin">
               🛠 Admin Panel

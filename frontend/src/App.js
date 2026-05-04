@@ -22,6 +22,7 @@ import FavoritesPage from "./components/pages/FavoritesPage";
 import ReviewsPage from "./components/pages/ReviewsPage";
 import PersonPage from "./components/pages/personPage";
 import BadgesProgressPage from "./components/pages/BadgesProgressPage";
+import MovieAkinatorPage from "./components/pages/MovieAkinatorPage";
 
 
 
@@ -53,6 +54,7 @@ const App = () => {
           <Route path="/reviews" element={<ReviewsPage />} />
           <Route path="/person/:personId" element={<PersonPage />} /> 
           <Route path="/badges-progress" element={<BadgesProgressPage />} />
+          <Route path="/movie-akinator" element={<MovieAkinatorPage />} />
 
 
           {/* ✅ FIXED: pass movie ID into Reviews */}

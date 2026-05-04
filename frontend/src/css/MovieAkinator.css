@@ -1,0 +1,96 @@
+.akinator-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(0, 212, 255, 0.18), transparent 35%),
+    #0f0f0f;
+  color: white;
+  padding: 110px 30px 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.akinator-card {
+  width: min(900px, 100%);
+  background: rgba(20, 25, 35, 0.88);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 18px;
+  padding: 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+  text-align: center;
+}
+
+.akinator-card h1 {
+  font-size: 42px;
+  margin-bottom: 8px;
+}
+
+.akinator-subtitle,
+.akinator-progress,
+.akinator-count,
+.akinator-message {
+  color: #b9c4d0;
+}
+
+.akinator-card h2 {
+  margin: 30px 0;
+  font-size: 30px;
+}
+
+.akinator-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+}
+
+.akinator-buttons button,
+.akinator-reset {
+  background: rgba(0, 212, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(0, 212, 255, 0.5);
+  border-radius: 12px;
+  padding: 12px 34px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.akinator-buttons button:hover,
+.akinator-reset:hover {
+  background: rgba(0, 212, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.akinator-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 18px;
+  margin: 28px 0;
+}
+
+.akinator-movie-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.akinator-movie-card img {
+  width: 100%;
+  height: 230px;
+  object-fit: cover;
+}
+
+.akinator-movie-card div {
+  padding: 10px;
+}
+
+.akinator-movie-card h3 {
+  font-size: 16px;
+  margin: 0 0 6px;
+}
+
+.akinator-movie-card p {
+  color: #aaa;
+  margin: 3px 0;
+  font-size: 13px;
+}
