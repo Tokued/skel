@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import './css/card.css';
 import './index.css';
 
+
 // Components
 import Navbar from "./components/navbar";
 import LandingPage from "./components/pages/landingPage";
@@ -20,6 +21,8 @@ import AdminDashboard from "./components/pages/AdminDashboard";
 import FavoritesPage from "./components/pages/FavoritesPage";
 import ReviewsPage from "./components/pages/ReviewsPage";
 import PersonPage from "./components/pages/personPage";
+import BadgesProgressPage from "./components/pages/BadgesProgressPage";
+
 
 
 export const UserContext = createContext();
@@ -48,7 +51,9 @@ const App = () => {
           <Route path="/admin" element={<AdminDashboard />} /> 
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
-          <Route path="/person/:personId" element={<PersonPage />} />
+          <Route path="/person/:personId" element={<PersonPage />} /> 
+          <Route path="/badges-progress" element={<BadgesProgressPage />} />
+
 
           {/* ✅ FIXED: pass movie ID into Reviews */}
           <Route path="/reviews/:id" element={<Reviews />} />

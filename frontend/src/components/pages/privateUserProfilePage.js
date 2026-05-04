@@ -5,6 +5,14 @@ import { useNavigate } from "react-router-dom";
 import getUserInfo from "../../utilities/decodeJwt";
 import axios from "axios";
 
+// ⭐ Import badge definitions
+import badgeDefinitions from "../badges";
+
+// ⭐ GOD MODE — turn ON for presentation, OFF afterward
+const PRESENTATION_MODE = true;
+
+
+
 const PrivateUserProfile = () => {
   const [show, setShow] = useState(false);
   const [user, setUser] = useState(null);
@@ -36,7 +44,7 @@ const PrivateUserProfile = () => {
   // ⭐ Save avatar to DB
   const selectAvatar = async (img) => {
     await axios.put("http://localhost:8081/user/profile/update", {
-      userId: user.id, // FIXED
+      userId: user.id,
       avatarUrl: img,
       backgroundUrl: savedBackground,
     });
@@ -46,7 +54,7 @@ const PrivateUserProfile = () => {
   // ⭐ Save background to DB
   const selectBackground = async (img) => {
     await axios.put("http://localhost:8081/user/profile/update", {
-      userId: user.id, // FIXED
+      userId: user.id,
       avatarUrl: savedAvatar,
       backgroundUrl: img,
     });
@@ -61,7 +69,7 @@ const PrivateUserProfile = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       await axios.put("http://localhost:8081/user/profile/update", {
-        userId: user.id, // FIXED
+        userId: user.id,
         avatarUrl: reader.result,
         backgroundUrl: savedBackground,
       });
@@ -79,7 +87,7 @@ const PrivateUserProfile = () => {
     const reader = new FileReader();
     reader.onloadend = async () => {
       await axios.put("http://localhost:8081/user/profile/update", {
-        userId: user.id, // FIXED
+        userId: user.id,
         avatarUrl: savedAvatar,
         backgroundUrl: reader.result,
       });
@@ -93,9 +101,8 @@ const PrivateUserProfile = () => {
     setUser(u);
 
     if (u?.id) {
-      // ⭐ Load avatar/background from DB
       axios
-        .get(`http://localhost:8081/user/profile/${u.id}`) // FIXED
+        .get(`http://localhost:8081/user/profile/${u.id}`)
         .then((res) => {
           setSavedAvatar(res.data.avatarUrl);
           setSavedBackground(res.data.backgroundUrl);
@@ -103,7 +110,7 @@ const PrivateUserProfile = () => {
         .catch(() => {});
 
       axios
-        .get(`http://localhost:8081/watchlist/${u.id}`) // FIXED
+        .get(`http://localhost:8081/watchlist/${u.id}`)
         .then(async (res) => {
           const raw = res.data;
           setWatchlist(raw);
@@ -124,7 +131,7 @@ const PrivateUserProfile = () => {
         .catch(() => {});
 
       axios
-        .get(`http://localhost:8081/reviews/user/${u.id}`) // FIXED
+        .get(`http://localhost:8081/reviews/user/${u.id}`)
         .then((res) => setReviews(res.data.reviews || []))
         .catch(() => {});
     }
@@ -147,53 +154,32 @@ const PrivateUserProfile = () => {
   if (!user)
     return <h4 className="text-center mt-5">Log in to view this page.</h4>;
 
+  // ⭐ Stats
   const totalMovies = mergedMovies.length;
   const watched = mergedMovies.filter((m) => m.watched).length;
   const favorites = mergedMovies.filter((m) => m.favorite).length;
-
   const rated = mergedMovies.filter((m) => m.rating);
-
   const avgRating =
     rated.length > 0
       ? (rated.reduce((a, b) => a + b.rating, 0) / rated.length).toFixed(1)
       : "N/A";
-
   const totalReviews = reviews.length;
 
-  const badges = [];
-  if (watched >= 1)
-    badges.push({
-      label: "Movie Newbie",
-      desc: "Watched your first movie",
-    });
-  if (watched >= 10)
-    badges.push({
-      label: "Film Enthusiast",
-      desc: "Watched 10 movies",
-    });
+  // ⭐ GOD MODE BADGE LOGIC
+  const stats = {
+    watched,
+    favorites,
+    rated: rated.length,
+    totalReviews,
+  };
 
-  if (favorites >= 5)
-    badges.push({
-      label: "Favorite Collector",
-      desc: "Added 5 favorites",
-    });
+  const badges = PRESENTATION_MODE
+    ? badgeDefinitions
+    : badgeDefinitions.filter((b) => b.progress(stats) >= b.goal);
 
-  if (totalReviews >= 1)
-    badges.push({
-      label: "Reviewer",
-      desc: "Wrote your first review",
-    });
-  if (totalReviews >= 5)
-    badges.push({
-      label: "Critic",
-      desc: "Wrote 5 reviews",
-    });
-
-  if (rated.length >= 5)
-    badges.push({
-      label: "Rating Machine",
-      desc: "Rated 5 movies",
-    });
+  const hasAllBadges = PRESENTATION_MODE
+    ? true
+    : badges.length === badgeDefinitions.length;
 
   const goToWatchlist = () => navigate("/watchlist");
   const goToFavorites = () => navigate("/favorites");
@@ -210,11 +196,17 @@ const PrivateUserProfile = () => {
         backgroundRepeat: "no-repeat",
         borderRadius: "20px",
         padding: "40px",
-        boxShadow: "0 0 20px rgba(0, 0, 0, 0.6)",
+        boxShadow: "0 0 20px rgba(0,0,0,0.6)",
       }}
     >
-      {/* Profile Picture */}
+      {/* ⭐ Crown Above Avatar */}
       <div className="text-center mb-4">
+        {hasAllBadges && (
+          <div style={{ fontSize: "42px", marginBottom: "-10px" }}>
+            👑
+          </div>
+        )}
+
         <img
           src={savedAvatar || "/avatars/default.jpg"}
           alt="profile avatar"
@@ -223,9 +215,11 @@ const PrivateUserProfile = () => {
             height: "140px",
             borderRadius: "50%",
             objectFit: "cover",
-            border: "4px solid #cc5c99",
+            border: hasAllBadges ? "4px solid gold" : "4px solid #cc5c99",
+            boxShadow: hasAllBadges
+              ? "0 0 25px gold"
+              : "0 0 15px rgba(0,0,0,0.5)",
             marginBottom: "15px",
-            boxShadow: "0 0 15px rgba(0, 0, 0, 0.5)",
           }}
         />
       </div>
@@ -240,7 +234,7 @@ const PrivateUserProfile = () => {
       <div
         className="d-flex justify-content-center flex-wrap gap-3 mb-3"
         style={{
-          background: "rgba(0, 0, 0, 0.55)",
+          background: "rgba(0,0,0,0.55)",
           padding: "20px",
           borderRadius: "12px",
           backdropFilter: "blur(6px)",
@@ -263,7 +257,7 @@ const PrivateUserProfile = () => {
                   ? "3px solid #cc5c99"
                   : "2px solid transparent",
               transition: "0.2s",
-              boxShadow: "0 0 10px rgba(0, 0, 0, 0.4)",
+              boxShadow: "0 0 10px rgba(0,0,0,0.4)",
             }}
           />
         ))}
@@ -299,7 +293,7 @@ const PrivateUserProfile = () => {
       <div
         className="d-flex justify-content-center flex-wrap gap-3 mb-3"
         style={{
-          background: "rgba(0, 0, 0, 0.55)",
+          background: "rgba(0,0,0,0.55)",
           padding: "20px",
           borderRadius: "12px",
           backdropFilter: "blur(6px)",
@@ -322,7 +316,7 @@ const PrivateUserProfile = () => {
                   ? "3px solid #cc5c99"
                   : "2px solid transparent",
               transition: "0.2s",
-              boxShadow: "0 0 10px rgba(0, 0, 0, 0.4)",
+              boxShadow: "0 0 10px rgba(0,0,0,0.4)",
             }}
           />
         ))}
@@ -354,7 +348,7 @@ const PrivateUserProfile = () => {
       <div
         className="p-4 rounded"
         style={{
-          background: "rgba(0, 0, 0, 0.7)",
+          background: "rgba(0,0,0,0.7)",
           maxWidth: "600px",
           margin: "0 auto",
           border: "1px solid #333",
@@ -366,22 +360,21 @@ const PrivateUserProfile = () => {
         <div className="d-flex justify-content-between text-start px-3">
           <div>
             <p>
-              <strong>Total Movies: </strong> {totalMovies}
+              <strong>Total Movies:</strong> {totalMovies}
             </p>
             <p>
-              <strong>Watched: </strong> {watched}
+              <strong>Watched:</strong> {watched}
             </p>
             <p>
-              <strong>Favorites: </strong> {favorites}
+              <strong>Favorites:</strong> {favorites}
             </p>
           </div>
           <div>
             <p>
-              <strong>Avg Rating: </strong> {avgRating}
+              <strong>Avg Rating:</strong> {avgRating}
             </p>
             <p>
-              <strong>Your Reviews: </strong> {totalReviews}
-            </p>
+              <strong>Your Reviews:</strong> {totalReviews}</p>
           </div>
         </div>
 
@@ -408,23 +401,34 @@ const PrivateUserProfile = () => {
         </div>
       </div>
 
-      {/* Badges */}
+      {/* Badge Progress Button */}
+      <Button
+        onClick={() => navigate("/badges-progress")}
+        style={{ background: "#cc5c99", border: "none", marginTop: "20px" }}
+      >
+        Badge Progress
+      </Button>
+
+      {/* ⭐ BADGES */}
       <h3 className="mt-5 mb-3">Badges</h3>
 
       <div className="d-flex flex-wrap justify-content-center gap-3">
-        {badges.length === 0 && <p>No badges yet - start watching!</p>}
+        {badges.length === 0 && (
+          <p>No badges yet — start watching!</p>
+        )}
+
         {badges.map((b, i) => (
           <div
             key={i}
             style={{
-              background: "rgba(0, 0, 0, 0.6)",
+              background: "rgba(0,0,0,0.6)",
               padding: "10px 15px",
               borderRadius: "12px",
               border: "1px solid #cc5c99",
               color: "white",
               fontWeight: "bold",
               cursor: "default",
-              boxShadow: "0 0 10px rgba(0, 0, 0, 0.4)",
+              boxShadow: "0 0 10px rgba(0,0,0,0.4)",
             }}
             title={b.desc}
           >
@@ -433,14 +437,13 @@ const PrivateUserProfile = () => {
         ))}
       </div>
 
-      {/* Logout Button */}
+      {/* Logout */}
       <div className="mt-4">
         <Button className="me-2" onClick={handleShow}>
           Log Out
         </Button>
       </div>
 
-      {/* Logout Modal */}
       <Modal show={show} onHide={handleClose} backdrop="static" keyboard={false}>
         <Modal.Header closeButton>
           <Modal.Title>Log Out</Modal.Title>
