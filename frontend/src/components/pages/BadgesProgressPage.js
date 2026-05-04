@@ -12,7 +12,7 @@ const BadgesProgressPage = () => {
       if (!user) return;
 
       try {
-        // ⭐ 1. Fetch watchlist using the SAME route as FavoritesPage
+        // ⭐ Fetch watchlist
         const watchlistRes = await axios.get(
           `http://localhost:8081/watchlist/${user.id}`
         );
@@ -22,7 +22,7 @@ const BadgesProgressPage = () => {
         const watched = watchlist.filter((m) => m.watched).length;
         const rated = watchlist.filter((m) => m.rating && m.rating > 0).length;
 
-        // ⭐ 2. Fetch reviews using the SAME route as ReviewsPage
+        // ⭐ Fetch reviews
         const reviewRes = await axios.get(
           `http://localhost:8081/reviews/user/${user.id}`
         );
@@ -50,7 +50,19 @@ const BadgesProgressPage = () => {
   }
 
   return (
-    <div className="container text-white mt-5">
+    <div
+      className="container text-white mt-5"
+      style={{
+        backgroundImage:
+          "url('https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=1920&auto=format&fit=crop')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        borderRadius: "20px",
+        padding: "40px",
+        boxShadow: "0 0 20px rgba(0,0,0,0.6)",
+      }}
+    >
       <h1 className="mb-4">Badge Progress</h1>
 
       {badgeDefinitions.map((badge) => {
