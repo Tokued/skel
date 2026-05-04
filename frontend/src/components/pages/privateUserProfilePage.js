@@ -17,7 +17,6 @@ const PrivateUserProfile = () => {
   const [show, setShow] = useState(false);
   const [user, setUser] = useState(null);
 
-  const [watchlist, setWatchlist] = useState([]);
   const [mergedMovies, setMergedMovies] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [avatarOptions, setAvatarOptions] = useState([]);
@@ -113,7 +112,6 @@ const PrivateUserProfile = () => {
         .get(`http://localhost:8081/watchlist/${u.id}`)
         .then(async (res) => {
           const raw = res.data;
-          setWatchlist(raw);
 
           const movieDetails = await Promise.all(
             raw.map((m) =>
