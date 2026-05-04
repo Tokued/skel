@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 
 const TrailerRow = () => {
+  const navigate = useNavigate();
+
   const [trailers, setTrailers] = useState([]);
   const [selectedTrailer, setSelectedTrailer] = useState(null);
   const [selectedMovieDetails, setSelectedMovieDetails] = useState(null);
@@ -141,6 +144,13 @@ const TrailerRow = () => {
     setSelectedMovieDetails(null);
   };
 
+  const openActorPage = (actorId) => {
+    if (!actorId) return;
+
+    closeModal();
+    navigate(`/person/${actorId}`);
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
 
@@ -214,7 +224,16 @@ const TrailerRow = () => {
 
                     <div style={styles.castRow}>
                       {selectedMovieDetails.cast.map((actor) => (
-                        <div key={actor.id} style={styles.castCard}>
+                        <div
+                          key={actor.id}
+                          style={styles.castCard}
+                          onClick={() => openActorPage(actor.id)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") openActorPage(actor.id);
+                          }}
+                        >
                           {actor.profile_path ? (
                             <img
                               src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
@@ -477,29 +496,6 @@ const styles = {
     display: "block",
   },
 
-  infoCard: {
-    padding: "22px 26px",
-    background:
-      "linear-gradient(180deg, rgba(35,35,35,0.72), rgba(14,14,14,0.72))",
-    borderRadius: "18px",
-    border: "1px solid rgba(255,255,255,0.1)",
-  },
-
-  modalMainTitle: {
-    margin: "0 0 10px 0",
-    color: "#fff",
-    fontSize: "30px",
-    lineHeight: "1.15",
-    fontWeight: "900",
-  },
-
-  modalOverview: {
-    margin: 0,
-    color: "#e2e2e2",
-    fontSize: "15px",
-    lineHeight: "1.55",
-  },
-
   castSection: {
     padding: "10px 12px 12px",
     background:
@@ -515,61 +511,56 @@ const styles = {
     fontWeight: "900",
   },
 
-castRow: {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
-  gap: "14px",
-},
+  castRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+    gap: "14px",
+  },
 
-castCard: {
-  minWidth: "135px",
-  maxWidth: "135px",
-  background: "rgba(255,255,255,0.05)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  borderRadius: "14px",
-  overflow: "hidden",
-  textAlign: "center",
-  flex: "0 0 auto",
-  transition: "transform 0.2s ease",
-},
+  castCard: {
+    minWidth: "135px",
+    maxWidth: "135px",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "14px",
+    overflow: "hidden",
+    textAlign: "center",
+    flex: "0 0 auto",
+    transition:
+      "transform 0.2s ease, border-color 0.2s ease, background 0.2s ease",
+    cursor: "pointer",
+  },
 
-castImage: {
-  width: "100%",
-  height: "170px",
-  objectFit: "cover",
-  objectPosition: "center 20%",
-  display: "block",
-},
+  castImage: {
+    width: "100%",
+    height: "170px",
+    objectFit: "cover",
+    objectPosition: "center 20%",
+    display: "block",
+  },
 
-castPlaceholder: {
-  width: "100%",
-  height: "140px",
-  background: "#222",
-  color: "#777",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "18px",
-  fontWeight: "800",
-},
+  castPlaceholder: {
+    width: "100%",
+    height: "170px",
+    background: "#222",
+    color: "#777",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "18px",
+    fontWeight: "800",
+  },
 
   castTextBox: {
     padding: "8px 6px 8px",
   },
 
-castName: {
-  margin: "0",
-  color: "#fff",
-  fontSize: "13px",
-  lineHeight: "1.2",
-  fontWeight: "900",
-},
-
-  castRole: {
-    margin: 0,
-    color: "#bcbcbc",
-    fontSize: "9px",
-    lineHeight: "1.1",
+  castName: {
+    margin: "0",
+    color: "#fff",
+    fontSize: "13px",
+    lineHeight: "1.2",
+    fontWeight: "900",
   },
 
   sidebarPoster: {
