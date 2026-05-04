@@ -34,7 +34,7 @@ body {
   min-height: 70px;
   position: relative;
 
-  overflow: visible !important; /* ✅ FIX */
+  overflow: visible !important;
 }
 
 /* ─────────────────────────────────────────
@@ -72,7 +72,7 @@ body {
   width: min(700px, 60vw);
   z-index: 3000;
 
-  overflow: visible !important; /* ✅ FIX */
+  overflow: visible !important;
 }
 
 /* ─────────────────────────────────────────
@@ -82,7 +82,7 @@ body {
   position: relative;
   width: 100%;
 
-  overflow: visible !important; /* ✅ FIX */
+  overflow: visible !important;
 }
 
 /* ─────────────────────────────────────────
@@ -93,7 +93,7 @@ body {
   align-items: center;
 
   border-radius: 12px;
-  overflow: visible; /* ✅ important for dropdown */
+  overflow: visible;
 
   background: rgba(20, 25, 35, 0.55);
   backdrop-filter: blur(10px);
@@ -118,7 +118,7 @@ body {
 }
 
 /* ─────────────────────────────────────────
-   FILTER DROPDOWN (FIXED)
+   FILTER DROPDOWN
    ───────────────────────────────────────── */
 .vmdb-search-form .dropdown {
   display: flex;
@@ -172,7 +172,8 @@ body {
 }
 
 .vmdb-search-input::placeholder {
-  color: #6f7c91;
+  color: rgba(255, 255, 255, 0.75) !important;
+  opacity: 1;
 }
 
 .vmdb-search-input:focus {
@@ -235,7 +236,7 @@ body {
 }
 
 /* ─────────────────────────────────────────
-   SUGGESTIONS DROPDOWN
+   🔥 FIXED SUGGESTIONS DROPDOWN
    ───────────────────────────────────────── */
 .vmdb-suggestions-dropdown {
   position: absolute;
@@ -243,36 +244,62 @@ body {
   left: 0;
   right: 0;
 
-  background: rgba(15, 20, 30, 0.85);
+  max-height: 420px;
+  overflow-y: auto;
+
+  background: rgba(15, 20, 30, 0.9);
   backdrop-filter: blur(16px);
 
   border-radius: 14px;
   border: 1px solid rgba(0, 212, 255, 0.15);
 
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
   z-index: 9000;
+
+  padding: 6px;
 }
 
 .vmdb-suggestion-item {
   display: flex;
+  align-items: center;
   gap: 12px;
-  padding: 12px 14px;
+
+  padding: 8px 10px;
+  min-height: 92px;
+
+  border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .vmdb-suggestion-item:hover {
   background: rgba(0, 212, 255, 0.08);
-  transform: translateX(6px);
+  transform: translateX(4px);
+}
+
+.vmdb-suggestion-poster {
+  width: 58px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.vmdb-suggestion-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .vmdb-suggestion-title {
   color: #e6f0ff;
   font-weight: 600;
+  font-size: 14px;
+  line-height: 1.2;
 }
 
 .vmdb-suggestion-subtitle {
   color: #7f8ea3;
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 /* ─────────────────────────────────────────
@@ -303,10 +330,8 @@ body {
 }
 
 /* ─────────────────────────────────────────
-   FILTER DROPDOWN (RESTORE ORIGINAL STYLE ONLY)
+   FILTER DROPDOWN (CLEAN STYLE)
    ───────────────────────────────────────── */
-
-/* dropdown container */
 .vmdb-search-form .dropdown-menu {
   background-color: rgba(27, 27, 27, 0.95) !important;
   backdrop-filter: blur(10px) !important;
@@ -316,24 +341,19 @@ body {
 
   margin-top: 8px !important;
 
-  /* keep it from becoming “too fancy” */
   box-shadow: none !important;
   min-width: 180px !important;
   padding: 4px 0 !important;
 }
 
-/* dropdown items inside */
 .vmdb-search-form .dropdown-menu .dropdown-item {
   color: #ffffff !important;
   font-size: 13px !important;
 
   padding: 8px 12px !important;
-  transition: none !important;
 }
 
-/* hover state (match original feel) */
 .vmdb-search-form .dropdown-menu .dropdown-item:hover {
   background-color: #2a2a2a !important;
   color: #ffffff !important;
-  transform: none !important;
 }
