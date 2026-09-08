@@ -24,6 +24,7 @@ const movieRoutes = require("./routes/movies");
 const trailerGet = require("./routes/trailerGet");
 const adminRoutes = require("./routes/admin");
 const reviewRoute = require("./routes/review.routes");
+const movieAkinatorRoutes = require("./routes/movieAkinator");
 
 // ---------------- WATCHLIST ROUTES ----------------
 const watchlistAdd = require("./routes/watchlistAdd");
@@ -85,6 +86,9 @@ app.use("/movies", movieRoutes);
 // TRAILERS
 app.use("/trailers", trailerGet);
 
+// AKINATOR
+app.use("/akinator", movieAkinatorRoutes);
+
 // HEALTH CHECK
 app.get("/", (req, res) => {
   res.send("Backend service is running.");
@@ -94,7 +98,3 @@ app.get("/", (req, res) => {
 app.listen(SERVER_PORT, () => {
   console.log(`Server running on port ${SERVER_PORT}`);
 });
-
-// ---------------- AKINATOR ----------------
-const movieAkinatorRoutes = require("./routes/movieAkinator");
-app.use("/akinator", movieAkinatorRoutes);

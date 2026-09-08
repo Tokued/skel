@@ -7,10 +7,11 @@ import Row from 'react-bootstrap/Row';
 import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
 import getUserInfo from '../../utilities/decodeJwt';
+import API_BASE_URL from '../../config/api';
 
 const EditUserPage = () =>{
 
-  const url = `${process.env.REACT_APP_BACKEND_SERVER_URI}/user/editUser`;
+  const url = `${API_BASE_URL}/user/editUser`;
   const navigate = useNavigate();
 
   // form validation checks
@@ -33,15 +34,16 @@ const EditUserPage = () =>{
   // initialize form values and get userId on render
   const [form, setValues] = useState({userId : "", username: "", email: "", password: "" })
   useEffect(() => {
-    setValues({userId : getUserInfo().id})
+    const info = getUserInfo()
+    if (info) setValues(prev => ({ ...prev, userId: info.id }))
   }, [])
 
   // handle form field changes
   const handleChange = ({ currentTarget: input }) => {
     setValues({ ...form, [input.id]: input.value });
-    if ( !!errors[input] ) setErrors({
+    if ( !!errors[input.id] ) setErrors({
       ...errors,
-      [input]: null
+      [input.id]: null
     })
   };
 
