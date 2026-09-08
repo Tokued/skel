@@ -1,17 +1,9 @@
 const express = require("express");
-const Anthropic = require("@anthropic-ai/sdk");
+const axios = require("axios");
 
 const router = express.Router();
 
-const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
-
-// Claude model used for recommendations. Override with CLAUDE_MODEL in .env
-// (e.g. "claude-haiku-4-5" for a cheaper/faster run on this simple task).
-const CLAUDE_MODEL = process.env.CLAUDE_MODEL || "claude-opus-5";
-
-const anthropic = CLAUDE_API_KEY
-  ? new Anthropic({ apiKey: CLAUDE_API_KEY })
-  : null;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 router.post("/recommend", async (req, res) => {
   const { description } = req.body;
@@ -20,8 +12,8 @@ router.post("/recommend", async (req, res) => {
     return res.status(400).json({ error: "Description is required" });
   }
 
-  if (!anthropic) {
-    return res.status(500).json({ error: "Missing Claude API key" });
+  if (!GROQ_API_KEY) {
+    return res.status(500).json({ error: "Missing Groq API key" });
   }
 
   try {
@@ -44,21 +36,29 @@ Example:
 ["Inception", "The Matrix", "Interstellar", "Fight Club", "The Dark Knight", "Pulp Fiction", "The Lord of the Rings: The Fellowship of the Ring", "The Shawshank Redemption", "The Godfather", "Forrest Gump"]
 `;
 
-    const response = await anthropic.messages.create({
-      model: CLAUDE_MODEL,
-      max_tokens: 2048,
-      messages: [
-        {
-          role: "user",
-          content: prompt,
+    const response = await axios.post(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        model: "llama-3.1-8b-instant",
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+          "Content-Type": "application/json",
         },
-      ],
-    });
+      }
+    );
 
-    let text = response.content
-      .filter((block) => block.type === "text")
-      .map((block) => block.text)
-      .join("")
+    let text = response.data?.choices?.[0]?.message?.content || "[]";
+
+    text = text
       .replace(/```json/g, "")
       .replace(/```/g, "")
       .trim();
@@ -83,14 +83,10 @@ Example:
 
     return res.json({ movies });
   } catch (err) {
-    const details =
-      err instanceof Anthropic.APIError
-        ? { status: err.status, message: err.message }
-        : err.message;
-    console.error("Claude AI error:", details);
+    console.error("Groq AI error:", err.response?.data || err.message);
     return res.status(500).json({
       error: "AI request failed",
-      details,
+      details: err.response?.data || err.message,
     });
   }
 });

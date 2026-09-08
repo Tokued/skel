@@ -18,7 +18,6 @@
   },
   "homepage": "https://github.com/Tochey/User_Service#readme",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.124.0",
     "axios": "^1.15.2",
     "bcrypt": "^5.1.0",
     "cors": "^2.8.6",
