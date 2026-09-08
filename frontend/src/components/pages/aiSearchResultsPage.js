@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import API_BASE_URL from "../../config/api";
 
 const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
-const OMDB_API_KEY = "96e6cc14";
+const OMDB_API_KEY = process.env.REACT_APP_OMDB_API_KEY || "96e6cc14";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
 
 // ─────────────────────────────────────────

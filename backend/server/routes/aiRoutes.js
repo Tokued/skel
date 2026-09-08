@@ -5,6 +5,10 @@ const router = express.Router();
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
+// Model must be one your Groq org actually has access to
+// (GET https://api.groq.com/openai/v1/models). Override with GROQ_MODEL in .env.
+const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-20b";
+
 router.post("/recommend", async (req, res) => {
   const { description } = req.body;
 
@@ -39,7 +43,7 @@ Example:
     const response = await axios.post(
       "https://api.groq.com/openai/v1/chat/completions",
       {
-        model: "llama-3.1-8b-instant",
+        model: GROQ_MODEL,
         messages: [
           {
             role: "user",
@@ -47,6 +51,8 @@ Example:
           },
         ],
         temperature: 0.7,
+        // Keep under the free-tier output-tokens-per-minute cap (1000).
+        max_tokens: 900,
       },
       {
         headers: {
