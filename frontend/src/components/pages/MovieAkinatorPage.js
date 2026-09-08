@@ -2,11 +2,16 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../css/MovieAkinator.css";
+
 import viking1 from "../../assets/viking1.png";
 import viking2 from "../../assets/viking2.png";
+import viking3 from "../../assets/viking3.png";
 
 const BACKEND_URL =
   process.env.REACT_APP_BACKEND_SERVER_URI || "http://localhost:8081";
+
+const NARROWING_MIN_COUNT = 25;
+const NARROWING_MAX_COUNT = 50;
 
 const genreNames = {
   28: "action",
@@ -478,12 +483,14 @@ export default function MovieAkinatorPage() {
   const [vikingFrame, setVikingFrame] = useState(0);
 
   useEffect(() => {
+    if (finished) return;
+
     const interval = setInterval(() => {
       setVikingFrame((prev) => (prev === 0 ? 1 : 0));
     }, 650);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [finished]);
 
   useEffect(() => {
     const fetchMoviePool = async () => {
@@ -537,6 +544,14 @@ export default function MovieAkinatorPage() {
     const gap = top[0].score - top[1].score;
     return Math.min(99, Math.max(10, Math.round(55 + gap * 2)));
   }, [movies]);
+
+  const isNarrowing =
+    activeCount >= NARROWING_MIN_COUNT && activeCount <= NARROWING_MAX_COUNT;
+
+  const currentVikingSprite = useMemo(() => {
+    if (finished || isNarrowing) return viking3;
+    return vikingFrame === 0 ? viking1 : viking2;
+  }, [finished, isNarrowing, vikingFrame]);
 
   const goToMoviePage = async (movie) => {
     try {
@@ -628,13 +643,19 @@ export default function MovieAkinatorPage() {
       <div className="akinator-stage">
         <div className="akinator-viking-side">
           <img
-            src={vikingFrame === 0 ? viking1 : viking2}
+            src={currentVikingSprite}
             alt="VMDB Viking"
-            className="akinator-viking-sprite"
+            className={`akinator-viking-sprite ${
+              !finished && isNarrowing ? "viking-alert" : ""
+            }`}
           />
 
           <div className="akinator-viking-bubble">
-            {finished ? "My guess is ready." : "Hmm... thinking."}
+            {finished
+              ? "My guess is ready."
+              : isNarrowing
+              ? "I'm getting close!"
+              : "Hmm... thinking."}
           </div>
         </div>
 
