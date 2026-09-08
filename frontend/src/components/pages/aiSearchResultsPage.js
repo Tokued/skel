@@ -113,7 +113,12 @@ const AiSearchResultsPage = () => {
         movieTitles = res.data.movies || [];
       } catch (err) {
         console.error("AI search failed:", err);
-        setError("Could not reach the AI recommendation engine. Is your server running?");
+        const serverMsg = err.response?.data?.error;
+        setError(
+          serverMsg
+            ? `AI recommendation engine error: ${serverMsg}`
+            : "Could not reach the AI recommendation engine. Is your server running?"
+        );
         setLoading(false);
         return;
       }
