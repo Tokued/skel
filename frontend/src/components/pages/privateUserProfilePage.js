@@ -4,6 +4,7 @@ import Modal from "react-bootstrap/Modal";
 import { useNavigate } from "react-router-dom";
 import getUserInfo from "../../utilities/decodeJwt";
 import axios from "axios";
+import API_BASE_URL from "../../config/api";
 
 // ⭐ Import badge definitions
 import badgeDefinitions from "../badges";
@@ -42,7 +43,7 @@ const PrivateUserProfile = () => {
 
   // ⭐ Save avatar to DB
   const selectAvatar = async (img) => {
-    await axios.put("http://localhost:8081/user/profile/update", {
+    await axios.put(`${API_BASE_URL}/user/profile/update`, {
       userId: user.id,
       avatarUrl: img,
       backgroundUrl: savedBackground,
@@ -52,7 +53,7 @@ const PrivateUserProfile = () => {
 
   // ⭐ Save background to DB
   const selectBackground = async (img) => {
-    await axios.put("http://localhost:8081/user/profile/update", {
+    await axios.put(`${API_BASE_URL}/user/profile/update`, {
       userId: user.id,
       avatarUrl: savedAvatar,
       backgroundUrl: img,
@@ -67,7 +68,7 @@ const PrivateUserProfile = () => {
 
     const reader = new FileReader();
     reader.onloadend = async () => {
-      await axios.put("http://localhost:8081/user/profile/update", {
+      await axios.put(`${API_BASE_URL}/user/profile/update`, {
         userId: user.id,
         avatarUrl: reader.result,
         backgroundUrl: savedBackground,
@@ -85,7 +86,7 @@ const PrivateUserProfile = () => {
 
     const reader = new FileReader();
     reader.onloadend = async () => {
-      await axios.put("http://localhost:8081/user/profile/update", {
+      await axios.put(`${API_BASE_URL}/user/profile/update`, {
         userId: user.id,
         avatarUrl: savedAvatar,
         backgroundUrl: reader.result,
@@ -101,7 +102,7 @@ const PrivateUserProfile = () => {
 
     if (u?.id) {
       axios
-        .get(`http://localhost:8081/user/profile/${u.id}`)
+        .get(`${API_BASE_URL}/user/profile/${u.id}`)
         .then((res) => {
           setSavedAvatar(res.data.avatarUrl);
           setSavedBackground(res.data.backgroundUrl);
@@ -109,13 +110,13 @@ const PrivateUserProfile = () => {
         .catch(() => {});
 
       axios
-        .get(`http://localhost:8081/watchlist/${u.id}`)
+        .get(`${API_BASE_URL}/watchlist/${u.id}`)
         .then(async (res) => {
           const raw = res.data;
 
           const movieDetails = await Promise.all(
             raw.map((m) =>
-              axios.get(`http://localhost:8081/movies/${m.movieId}`)
+              axios.get(`${API_BASE_URL}/movies/${m.movieId}`)
             )
           );
 
@@ -129,7 +130,7 @@ const PrivateUserProfile = () => {
         .catch(() => {});
 
       axios
-        .get(`http://localhost:8081/reviews/user/${u.id}`)
+        .get(`${API_BASE_URL}/reviews/user/${u.id}`)
         .then((res) => setReviews(res.data.reviews || []))
         .catch(() => {});
     }

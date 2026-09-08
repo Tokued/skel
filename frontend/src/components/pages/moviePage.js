@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
 import MovieTrailer from "../MovieTrailer";
+import API_BASE_URL from "../../config/api";
 
 const MoviePage = () => {
   const navigate = useNavigate();
@@ -83,8 +84,20 @@ const MoviePage = () => {
       setMovie(null);
       setTmdbMovieId(null);
 
+      // Guard: if this fires, the `id` coming from useParams() is missing.
+      // That almost always means the route's :param name in App.js doesn't
+      // match `id` (e.g. route is "/movie/:movieId" but this file expects
+      // "id"), or the <Link>/navigate() call isn't passing a value at all.
+      if (!id || id === "undefined") {
+        setMovieError(
+          "No movie id found in the URL — check your route path and the param name it uses."
+        );
+        setLoading(false);
+        return;
+      }
+
       try {
-        const res = await axios.get(`http://localhost:8081/movies/${id}`);
+        const res = await axios.get(`${API_BASE_URL}/movies/${id}`);
         const baseMovie = res.data;
 
         let mergedMovie = {
@@ -174,6 +187,8 @@ const MoviePage = () => {
 
         if (err.response?.status === 404) {
           setMovieError("Movie details unavailable.");
+        } else if (err.response?.status === 400) {
+          setMovieError(err.response?.data?.message || "Invalid movie id.");
         } else {
           setMovieError("Error loading movie.");
         }
@@ -231,7 +246,7 @@ const MoviePage = () => {
       if (!userId) return;
 
       try {
-        const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
+        const res = await axios.get(`${API_BASE_URL}/watchlist/${userId}`);
         setWatchlist(res.data);
       } catch (err) {
         console.error("Watchlist fetch error:", err);
@@ -245,7 +260,7 @@ const MoviePage = () => {
 
   const fetchReviews = useCallback(async () => {
     try {
-      const res = await axios.get(`http://localhost:8081/reviews/movie/${id}`);
+      const res = await axios.get(`${API_BASE_URL}/reviews/movie/${id}`);
       setReviews(res.data.reviews || []);
     } catch (err) {
       console.error("Error fetching reviews:", err);
@@ -263,7 +278,7 @@ const MoviePage = () => {
     try {
       if (isAdded) {
         setWatchlist((prev) => prev.filter((m) => m.movieId !== id));
-        await axios.delete(`http://localhost:8081/watchlist/${userId}/${id}`);
+        await axios.delete(`${API_BASE_URL}/watchlist/${userId}/${id}`);
       } else {
         const newItem = {
           userId,
@@ -272,12 +287,12 @@ const MoviePage = () => {
         };
 
         setWatchlist((prev) => [...prev, newItem]);
-        await axios.post("http://localhost:8081/watchlist/add", newItem);
+        await axios.post(`${API_BASE_URL}/watchlist/add`, newItem);
       }
     } catch (err) {
       alert(err.response?.data?.message || "Watchlist error");
 
-      const res = await axios.get(`http://localhost:8081/watchlist/${userId}`);
+      const res = await axios.get(`${API_BASE_URL}/watchlist/${userId}`);
       setWatchlist(res.data);
     }
   };
@@ -303,7 +318,7 @@ const MoviePage = () => {
     if (!userId) return alert("Login required");
 
     try {
-      await axios.post("http://localhost:8081/reviews/add", {
+      await axios.post(`${API_BASE_URL}/reviews/add`, {
         movieId: id,
         userId,
         rating,
@@ -326,7 +341,7 @@ const MoviePage = () => {
 
   const saveEdit = async () => {
     try {
-      await axios.put(`http://localhost:8081/reviews/${editingReview._id}`, {
+      await axios.put(`${API_BASE_URL}/reviews/${editingReview._id}`, {
         userId,
         rating: editRating,
         reviewText: editText,
@@ -343,7 +358,7 @@ const MoviePage = () => {
     if (!window.confirm("Report this review to admin moderation?")) return;
 
     try {
-      await axios.put(`http://localhost:8081/reviews/${reviewId}/flag`);
+      await axios.put(`${API_BASE_URL}/reviews/${reviewId}/flag`);
       fetchReviews();
       alert("Review reported. Admins can review it in the flagged queue.");
     } catch (err) {
@@ -356,7 +371,7 @@ const MoviePage = () => {
     if (!window.confirm("Delete this review?")) return;
 
     try {
-      await axios.delete(`http://localhost:8081/reviews/${reviewId}`, {
+      await axios.delete(`${API_BASE_URL}/reviews/${reviewId}`, {
         data: { userId },
       });
 

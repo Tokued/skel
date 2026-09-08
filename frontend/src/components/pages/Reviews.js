@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Container, Card, Form, Button, Row, Col, Badge } from "react-bootstrap";
+import API_BASE_URL from "../../config/api";
 
-const API = "http://localhost:8081/reviews";
+const API = `${API_BASE_URL}/reviews`;
 
 // ✅ FIX: get real logged-in user
 const CURRENT_USER_ID = JSON.parse(localStorage.getItem("user"))?._id;

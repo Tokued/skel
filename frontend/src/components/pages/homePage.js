@@ -5,6 +5,7 @@ import logo from "../../assets/vmdb-logo.png";
 import TrailerRow from "../TrailerRow";
 import RecommendationsRow from "../RecommendationsRow";
 import getUserInfo from "../../utilities/decodeJwt";
+import API_BASE_URL from "../../config/api";
 
 const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
@@ -26,7 +27,7 @@ const HomePage = () => {
         if (!user) return;
 
         const watchlistRes = await axios.get(
-          `http://localhost:8081/watchlist/${user.id}`
+          `${API_BASE_URL}/watchlist/${user.id}`
         );
 
         const watched = watchlistRes.data
@@ -39,7 +40,7 @@ const HomePage = () => {
 
         if (watched.length > 0) {
           const movieRes = await axios.get(
-            `http://localhost:8081/movies/${watched[0].movieId}`
+            `${API_BASE_URL}/movies/${watched[0].movieId}`
           );
 
           setMostRecentWatchedTitle(movieRes.data.title);

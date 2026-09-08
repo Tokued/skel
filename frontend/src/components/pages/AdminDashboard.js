@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Spinner, Badge } from "react-bootstrap";
+import API_BASE_URL from "../../config/api";
 
-const API = "http://localhost:8081/admin";
-const OMDB_API = "http://localhost:8081/movies";
+const API = `${API_BASE_URL}/admin`;
+const OMDB_API = `${API_BASE_URL}/movies`;
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);

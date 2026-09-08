@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
+import API_BASE_URL from "../../config/api";
 
 export default function ReviewsPage() {
   const [reviews, setReviews] = useState([]);
@@ -13,7 +14,7 @@ export default function ReviewsPage() {
       try {
         // 1. Fetch raw reviews
         const res = await axios.get(
-          `http://localhost:8081/reviews/user/${user.id}`
+          `${API_BASE_URL}/reviews/user/${user.id}`
         );
 
         const rawReviews = res.data.reviews || [];
@@ -21,7 +22,7 @@ export default function ReviewsPage() {
         // 2. Fetch movie details for each review
         const movieDetails = await Promise.all(
           rawReviews.map((r) =>
-            axios.get(`http://localhost:8081/movies/${r.movieId}`)
+            axios.get(`${API_BASE_URL}/movies/${r.movieId}`)
           )
         );
 

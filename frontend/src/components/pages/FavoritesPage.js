@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
+import API_BASE_URL from "../../config/api";
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState([]);
@@ -12,13 +13,13 @@ export default function FavoritesPage() {
     const fetchFavorites = async () => {
       try {
         // 1. Fetch raw watchlist
-        const res = await axios.get(`http://localhost:8081/watchlist/${user.id}`);
+        const res = await axios.get(`${API_BASE_URL}/watchlist/${user.id}`);
         const watchlist = res.data.filter((m) => m.favorite);
 
         // 2. Fetch movie details for each favorite
         const movieDetails = await Promise.all(
           watchlist.map((m) =>
-            axios.get(`http://localhost:8081/movies/${m.movieId}`)
+            axios.get(`${API_BASE_URL}/movies/${m.movieId}`)
           )
         );
 

@@ -4,9 +4,9 @@ import axios from "axios";
 import "../../css/MovieAkinator.css";
 import viking1 from "../../assets/viking1.png";
 import viking2 from "../../assets/viking2.png";
+import API_BASE_URL from "../../config/api";
 
-const BACKEND_URL =
-  process.env.REACT_APP_BACKEND_SERVER_URI || "http://localhost:8081";
+const BACKEND_URL = API_BASE_URL;
 
 const genreNames = {
   28: "action",

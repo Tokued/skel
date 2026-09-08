@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
 import badgeDefinitions from "../badges";
+import API_BASE_URL from "../../config/api";
 
 const BadgesProgressPage = () => {
   const [stats, setStats] = useState(null);
@@ -14,7 +15,7 @@ const BadgesProgressPage = () => {
       try {
         // ⭐ Fetch watchlist
         const watchlistRes = await axios.get(
-          `http://localhost:8081/watchlist/${user.id}`
+          `${API_BASE_URL}/watchlist/${user.id}`
         );
         const watchlist = watchlistRes.data || [];
 
@@ -24,7 +25,7 @@ const BadgesProgressPage = () => {
 
         // ⭐ Fetch reviews
         const reviewRes = await axios.get(
-          `http://localhost:8081/reviews/user/${user.id}`
+          `${API_BASE_URL}/reviews/user/${user.id}`
         );
 
         const rawReviews = reviewRes.data.reviews || [];

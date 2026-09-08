@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import API_BASE_URL from "../config/api";
 
 const MovieTrailer = ({ imdbID, title }) => {
   const [trailer, setTrailer] = useState(null);
@@ -10,7 +11,7 @@ const MovieTrailer = ({ imdbID, title }) => {
       if (!imdbID && !title) return;
 
       try {
-        const res = await axios.get(`http://localhost:8081/trailers/${imdbID || "unknown"}`, {
+        const res = await axios.get(`${API_BASE_URL}/trailers/${imdbID || "unknown"}`, {
           params: { title },
         });
         setTrailer(res.data);

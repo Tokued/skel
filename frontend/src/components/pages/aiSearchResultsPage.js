@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
+import API_BASE_URL from "../../config/api";
 
 const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const OMDB_API_KEY = "96e6cc14";
@@ -106,7 +107,7 @@ const AiSearchResultsPage = () => {
       // Step 1: get AI title list
       let movieTitles = [];
       try {
-        const res = await axios.post("http://localhost:8081/ai/recommend", {
+        const res = await axios.post(`${API_BASE_URL}/ai/recommend`, {
           description: description.trim(),
         });
         movieTitles = res.data.movies || [];

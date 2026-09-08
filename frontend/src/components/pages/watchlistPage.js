@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import getUserInfo from "../../utilities/decodeJwt";
+import API_BASE_URL from "../../config/api";
 
-const API = "http://localhost:8081/watchlist";
+const API = `${API_BASE_URL}/watchlist`;
 
 const WatchlistPage = () => {
   const [watchlist, setWatchlist] = useState([]);
@@ -47,7 +48,7 @@ const WatchlistPage = () => {
         const movieDetails = await Promise.all(
           res.data.map(async (m) => {
             try {
-              const movieRes = await axios.get(`http://localhost:8081/movies/${m.movieId}`);
+              const movieRes = await axios.get(`${API_BASE_URL}/movies/${m.movieId}`);
               const baseMovie = movieRes.data;
 
               let tmdbPoster = null;
